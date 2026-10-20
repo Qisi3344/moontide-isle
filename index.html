@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>月汐小岛</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="page" id="top">
+      <main class="main x-stage" id="stage" aria-label="可以旋转和点击的三维小岛"></main>
+      <p class="x-glass x-title">月汐小岛</p>
+      <button class="x-glass x-toggle" id="dayNight" type="button" aria-label="切换到夜晚" aria-pressed="false">🌙</button>
+      <p class="x-glass x-hint" id="hint">拖动转一转 · 双指缩放 · 戳戳果冻海</p>
+    </div>
+    <script src="vendor/three.min.js"></script>
+    <script src="vendor/OrbitControls.js"></script>
+    <script src="js/boot.js"></script>
+  </body>
+</html>
