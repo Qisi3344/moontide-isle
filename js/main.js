@@ -41,6 +41,7 @@ renderer.setAnimationLoop(function () {
   moon.lookAt(camera.position);
   controls.update();
   updateSpots(timeU.value, nightU.value);
+  updateMagic(dt, timeU.value, nightU.value);
   renderer.render(scene, camera);
 });
 
@@ -53,5 +54,6 @@ window.Island = {
     wolf: (function (q) { return new THREE.Vector3(q[0], height(q[0], q[1]), q[1]); })(polar(303, 4.68)),
     owl: owlPerch,
     house: new THREE.Vector3(CX + 0.8, HC, 0.4)
-  }
+  },
+  magic: { rocks: fRocks, crystal: crystal, jellies: jellies }
 };
