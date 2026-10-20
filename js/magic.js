@@ -45,14 +45,14 @@ var fRocks = [];
   var n = 10, pos = new Float32Array(n * 3), life = new Float32Array(n);
   for (var p = 0; p < n; p++) { life[p] = Math.random(); }
   var pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  var pts = new THREE.Points(pg, dotMat(i % 2 ? 0xc7b2f0 : 0xa8ebd9, 0.14));
+  var pts = new THREE.Points(pg, dotMat(i % 2 ? 0xeaf7f4 : 0xa8ebd9, 0.14));
   magicG.add(g); magicG.add(pts);
   fRocks.push({ g: g, base: d[2], ph: i * 1.7, spin: (i % 2 ? -1 : 1) * rnd(0.08, 0.16), s: s, pts: pts, life: life, kick: -9 });
 });
 
-// ---- 月汐水晶 crystal cluster ----
+// ---- 月汐水晶 crystal cluster: moonstone white + sea-glass mint ----
 var crystal = new THREE.Group();
-var cLilac = new THREE.MeshStandardMaterial({ color: lc(0xc7b2f0), emissive: lc(0xb69cf0), emissiveIntensity: 0.3, roughness: 0.25, metalness: 0, flatShading: true, transparent: true, opacity: 0.88 });
+var cLilac = new THREE.MeshStandardMaterial({ color: lc(0xeaf4f3), emissive: lc(0xbfe8ee), emissiveIntensity: 0.3, roughness: 0.2, metalness: 0, flatShading: true, transparent: true, opacity: 0.88 });
 var cMint = cLilac.clone(); cMint.color = lc(0xa8ebd9); cMint.emissive = lc(0x8fe6cf);
 function prism(h, r, m, x, z, tx, tz) {
   var g = new THREE.Group();
@@ -65,7 +65,7 @@ prism(0.36, 0.08, cMint, 0.13, 0.05, 0.1, -0.35);
 prism(0.3, 0.075, cLilac, -0.12, 0.06, -0.15, 0.4);
 prism(0.22, 0.06, cMint, 0.02, -0.13, -0.4, 0.05);
 prism(0.18, 0.05, cMint, -0.08, -0.08, 0.3, 0.45);
-var crystalLight = new THREE.PointLight(lc(0xc7b2f0), 0, 3.2, 2); crystalLight.position.y = 0.45; crystal.add(crystalLight);
+var crystalLight = new THREE.PointLight(lc(0xc8f0ee), 0, 3.2, 2); crystalLight.position.y = 0.45; crystal.add(crystalLight);
 ground(crystal, [-3.2, 1.9], -0.03);
 var crystalSpot = addSpot(crystal, "月汐水晶", null);
 crystalSpot.parts = crystal.children.filter(function (c) { return c.isGroup; });
@@ -73,7 +73,7 @@ crystalSpot.anchor = topOf(crystal, 0.2);
 // a little burst of sparkles when tapped
 var burstN = 18, burstPos = new Float32Array(burstN * 3), burstVel = new Float32Array(burstN * 3);
 var burstG = new THREE.BufferGeometry(); burstG.setAttribute("position", new THREE.BufferAttribute(burstPos, 3));
-var burst = new THREE.Points(burstG, dotMat(0xe6dcff, 0.16)); burst.material.opacity = 0; magicG.add(burst);
+var burst = new THREE.Points(burstG, dotMat(0xe4fbf6, 0.16)); burst.material.opacity = 0; magicG.add(burst);
 var burstT = -9, lastCrystalT = -9;
 function startBurst() {
   var c = crystal.position;
