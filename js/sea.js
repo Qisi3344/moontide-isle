@@ -1,0 +1,85 @@
+/* 月汐小岛 · sea.js — 果冻海、海床、戳一戳的涟漪 */
+"use strict";
+// ---------- jelly sea + seabed ----------
+var bed = new THREE.Mesh(new THREE.CircleGeometry(90, 48), new THREE.MeshStandardMaterial({ color: lc(0xc9b48f), roughness: 1 }));
+bed.rotation.x = -Math.PI / 2; bed.position.y = -1.28; scene.add(bed);
+
+var rip = []; for (var r = 0; r < 6; r++) rip.push(new THREE.Vector4(0, 0, -99, 0));
+var seaU = {
+  uTime: timeU, uNight: nightU, uRip: { value: rip }, uWave: { value: reduce ? 0.35 : 1 },
+  uSun: { value: SUN_DIR.clone() }, uFog: { value: DAY.bot.clone() }, uSky: { value: DAY.top.clone() },
+  // pre-blend colors so the sea over the sand reads mint #7FD8CB near shore, #3FA6BC outside
+  uShallow: { value: lc(0x62f0ea) }, uDeep: { value: lc(0x38b0cd) }
+};
+var seaG = new THREE.RingGeometry(0.001, 42, 180, 90);
+(function densify() {
+  var p = seaG.attributes.position;
+  for (var k = 0; k < p.count; k++) {
+    var x = p.getX(k), y = p.getY(k), d = Math.hypot(x, y); if (d < 1e-4) continue;
+    var nd = 42 * Math.pow(d / 42, 1.7); p.setXY(k, x / d * nd, y / d * nd);
+  }
+})();
+seaG.rotateX(-Math.PI / 2);
+var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
+  uniforms: seaU, transparent: true, depthWrite: false,
+  vertexShader: [
+    "uniform float uTime,uWave; uniform vec4 uRip[6]; varying vec3 vW; varying vec3 vN;",
+    "float H(vec2 p){ float t=uTime;",
+    " float h=uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t));",
+    " for(int i=0;i<6;i++){ vec4 r=uRip[i]; float a=t-r.z;",
+    "  if(r.w>0.0 && a>0.0 && a<7.0){ float d=distance(p,r.xy);",
+    "   float front=smoothstep(a*3.2+0.8,a*3.2-0.8,d);",
+    "   h+=r.w*0.3*exp(-0.85*a)*exp(-0.16*d)*sin(7.0*a-2.3*d)*front;",
+    "   h-=r.w*0.38*exp(-2.0*a)*cos(9.0*a)*exp(-d*d*0.7); } }",
+    " return h; }",
+    "void main(){ vec4 w=modelMatrix*vec4(position,1.); vec2 p=w.xz; float e=0.15; float h=H(p);",
+    " vN=normalize(vec3(H(p-vec2(e,0.))-H(p+vec2(e,0.)),2.0*e,H(p-vec2(0.,e))-H(p+vec2(0.,e))));",
+    " w.y+=h; vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }"
+  ].join("\n"),
+  fragmentShader: [
+    "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep; varying vec3 vW; varying vec3 vN;",
+    "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
+    "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
+    " float s=max(0.,-inside(vW.xz)-0.12);",
+    " vec3 c=mix(uShallow,uDeep,smoothstep(0.3,7.0,s));",
+    " float dif=max(dot(n,uSun),0.);",
+    " c*=(0.62+0.38*dif)*mix(vec3(1.),vec3(0.18,0.23,0.56),uNight);",
+    " vec3 hv=normalize(uSun+v); float sp=pow(max(dot(n,hv),0.),110.)*1.5+pow(max(dot(n,hv),0.),14.)*0.18;",
+    " float fr=pow(1.-max(dot(n,v),0.),3.);",
+    " c+=fr*mix(0.15,0.3,uNight)*mix(uSky,vec3(0.6,0.5,1.),uNight);",
+    " float wob=sin(atan(vW.z,vW.x)*14.+uTime*1.4)*0.08;",
+    " float foam=1.-smoothstep(0.12,0.45+wob,s);",
+    " float band=abs(s-(0.85+0.12*sin(uTime*0.9)+wob)); foam=max(foam,(1.-smoothstep(0.04,0.11,band))*0.55);",
+    " c=mix(c,vec3(1.,0.99,0.95)*mix(1.,0.55,uNight),foam*0.5);",
+    " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
+    " c+=vec3(1.)*sp*mix(1.,0.7,uNight);",
+    " float a=mix(0.7,0.92,smoothstep(0.,8.,s)); a=max(a,foam*0.5); a=max(a,min(sp,1.));",
+    " c=mix(c,uFog,smoothstep(22.,38.,r)); a*=1.-smoothstep(28.,41.,r);",
+    " gl_FragColor=vec4(c,a);",
+    "#include <encodings_fragment>",
+    "}"
+  ].join("\n")
+}));
+sea.renderOrder = 2;
+scene.add(sea);
+
+// ---------- tap ripple ----------
+var down = null, rc = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), ripI = 0;
+var el = renderer.domElement;
+el.addEventListener("pointerdown", function (e) { down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, multi: !!down }; });
+el.addEventListener("pointerup", function (e) {
+  if (!down || down.id !== e.pointerId) { down = null; return; }
+  var moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t, multi = down.multi;
+  down = null;
+  if (multi || moved > 10 || dt > 350) return;
+  var b = el.getBoundingClientRect();
+  ndc.set((e.clientX - b.left) / b.width * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
+  rc.setFromCamera(ndc, camera);
+  var hits = rc.intersectObjects(tapTargets, true);
+  if (hits.length && hits[0].object.userData.spot) { poke(hits[0].object.userData.spot); return; }
+  if (!rc.ray.intersectPlane(plane, hit)) return;
+  if (Math.hypot(hit.x, hit.z) > 34 || inside(hit.x, hit.z) > -0.15) return;
+  rip[ripI].set(hit.x, hit.z, timeU.value, 1);
+  ripI = (ripI + 1) % 6;
+});
+el.addEventListener("pointercancel", function () { down = null; });
