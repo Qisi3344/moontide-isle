@@ -134,8 +134,8 @@ function droopLeaf(a, len, up, w) { // a ribbon that arcs up-and-out from the po
   g.setIndex(idx); g.computeVertexNormals();
   return new THREE.Mesh(g, hPlantM);
 }
-var hanger = new THREE.Group(); hanger.position.set(FX + 0.11, 0.42, -0.15); house.add(hanger);
-var potM = mat(0xe3e8f2);
+var hanger = new THREE.Group(); hanger.position.set(FX + 0.11, 0.42, 0.0); house.add(hanger);
+var potM = mat(0xe3e8f2), hRunnerM = mat(0x7fa8dc); // runners pale blue, never black
 var hPot = mesh(new THREE.CylinderGeometry(0.05, 0.032, 0.05, 12), potM, 0, 0, 0); hanger.add(hPot);
 var potRim = mesh(new THREE.TorusGeometry(0.05, 0.006, 4, 16), hTrimM, 0, 0.025, 0); potRim.rotation.x = Math.PI / 2; hanger.add(potRim);
 for (var ci = 0; ci < 3; ci++) { // three thin cords up to the balcony slab
@@ -148,7 +148,7 @@ for (var li = 0; li < 14; li++) {
 }
 [[0.6, 0.15], [2.6, 0.2], [4.4, 0.12]].forEach(function (r, k) { // runners trailing down with baby plantlets
   var len = r[1], rx = Math.cos(r[0]) * 0.05, rz = Math.sin(r[0]) * 0.05;
-  var run = mesh(new THREE.CylinderGeometry(0.0025, 0.0025, len, 3), hPlantM, rx, -len / 2, rz); hanger.add(run);
+  var run = mesh(new THREE.CylinderGeometry(0.0025, 0.0025, len, 3), hRunnerM, rx, -len / 2, rz); hanger.add(run);
   var baby = new THREE.Group(); baby.position.set(rx, -len, rz); hanger.add(baby);
   for (var b = 0; b < 6; b++) baby.add(droopLeaf(b / 6 * Math.PI * 2 + k, 0.03, 0.025, 0.005));
 });
