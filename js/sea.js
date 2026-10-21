@@ -53,7 +53,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " float foam=1.-smoothstep(0.3,1.0+wob,s); // wider pale-sand shallows band around the island, both sea side and lagoon (2026-10-21)",
     " c=mix(c,vec3(1.,0.99,0.95)*mix(1.,0.55,uNight),foam*0.5);",
     " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
-    " c+=vec3(1.)*sp*mix(1.,0.7,uNight);",
+    " c+=mix(vec3(1.,0.82,0.6),vec3(1.),uNight)*sp*mix(1.,0.7,uNight);",
     " float a=mix(0.78,0.97,smoothstep(0.,3.,s)); a=max(a,foam*0.5); a=max(a,min(sp,1.));",
     " c=mix(c,uFog,smoothstep(22.,38.,r)); a*=1.-smoothstep(28.,41.,r);",
     " gl_FragColor=vec4(c,a);",
