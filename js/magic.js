@@ -19,7 +19,7 @@ function dotMat(hex, size) {
 function rnd(a, b) { return a + Math.random() * (b - a); }
 
 // ---- floating rock islets ----
-var fRockM = mat(0xaeb1c3), fGrassM = mat(0x6fae82), fBushM = moonLeafM[1];
+var fRockM = mat(0xaab6d0), fGrassM = mat(0x6fae82), fBushM = moonLeafM[1];
 var fRocks = [];
 [[200, 7.0, 3.2, 0.55], [262, 6.6, 4.6, 0.42], [128, 7.4, 2.6, 0.5], [20, 7.8, 4.0, 0.38]].forEach(function (d, i) {
   var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
