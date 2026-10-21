@@ -4,7 +4,7 @@
 // Day = a low golden-hour sun (2026-10-21: she wanted day to feel like just-after-sunrise / sunset glow, not noon; the isle
 // isn't on Earth anyway). Apricot horizon, soft blue zenith, warm gold key light, cool blue shade. No purple.
 var DAY = { top: lc(0x7ea6d6), bot: lc(0xf6c7a2), hemi: lc(0xc9d0e8), ground: lc(0x8e98bc), dir: lc(0xffc58e) };
-var NIGHT = { top: lc(0x141c4d), bot: lc(0x4a5aa8), hemi: lc(0x6d74c9), ground: lc(0x3a3f6e), dir: lc(0x9fb4ff) };
+var NIGHT = { top: lc(0x141c4d), bot: lc(0x4a5aa8), hemi: lc(0x6d74c9), ground: lc(0x355f9e), dir: lc(0x9fb4ff) };
 var timeU = { value: 0 }, nightU = { value: 0 };
 var SUN_DIR = new THREE.Vector3(0.14, 0.36, -0.99).normalize(); // low sun off to the right of the default view: side light, long shadows
 var skyU = { uTop: { value: DAY.top.clone() }, uBot: { value: DAY.bot.clone() }, uSunD: { value: SUN_DIR }, uNight: nightU };
@@ -34,6 +34,27 @@ var MOON_DIR = new THREE.Vector3(-0.55, 0.5, -0.67).normalize(); // night light:
 // No moon for now (2026-10-21): the sky-shader moon + glitter path read like a snowflake biscuit; she asked for the original light.
 function placeMoon() {}
 function updateMoon() {}
+
+// ---------- a few soft clouds far out (2026-10-21: the sky felt like a flat strip) ----------
+var cloudTex = (function () {
+  var c = document.createElement("canvas"); c.width = 256; c.height = 128;
+  var x = c.getContext("2d");
+  if (x && x.createRadialGradient) {
+    var rs = 5; function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+    for (var i = 0; i < 14; i++) {
+      var px = 40 + R() * 176, py = 60 + (R() - 0.5) * 30, r = 22 + R() * 30, g = x.createRadialGradient(px, py, 0, px, py, r);
+      g.addColorStop(0, "rgba(255,255,255,0.55)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      x.fillStyle = g; x.beginPath(); x.arc(px, py, r, 0, 6.3); x.fill();
+    }
+  }
+  var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+})();
+var cloudM = new THREE.SpriteMaterial({ map: cloudTex, color: lc(0xfff0e4), transparent: true, opacity: 0.85, depthWrite: false, fog: false });
+[[-150, 0.10, 46], [-110, 0.14, 38], [-70, 0.08, 52], [-30, 0.12, 40], [20, 0.09, 48], [70, 0.13, 36], [140, 0.1, 44], [200, 0.11, 50]].forEach(function (d) {
+  var a = THREE.MathUtils.degToRad(d[0]), sp = new THREE.Sprite(cloudM);
+  sp.position.set(Math.cos(a) * 160 * (1 - d[1]), 160 * d[1] + 6, Math.sin(a) * 160 * (1 - d[1]));
+  sp.scale.set(d[2], d[2] * 0.32, 1); sp.renderOrder = -1; scene.add(sp);
+});
 
 // ---------- lights ----------
 var hemi = new THREE.HemisphereLight(DAY.hemi.clone(), DAY.ground.clone(), 0.45);
