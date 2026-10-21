@@ -68,9 +68,39 @@ for (var px = PX0, pk = 0; px < PX1; px += 0.17, pk++) {
 pier.position.set(Math.cos(PTH) * PD0, 0.16, Math.sin(PTH) * PD0);
 pier.rotation.y = -PTH;
 lampsG.add(pier);
-var pierLamps = [moonLamp(PX1 - 0.05, -PW / 2 + 0.02, 0.3, PY + 0.018), moonLamp(PX1 - 0.05, PW / 2 - 0.02, -0.3, PY + 0.018)];
-pierLamps.forEach(function (l) { pier.add(l); });
-var pierLight = new THREE.PointLight(lc(0xffe2a0), 0, 2.4, 2); pierLight.position.set(PX1 - 0.05, PY + 0.8, 0); pier.add(pierLight);
+// 2026-10-21: two tall pillar lamps on the pier looked odd; one small night light at the end instead
+var nightLampM = glowMat(0xeaf4ff, 0xbfe3ff), nightLamp = new THREE.Group();
+nightLamp.add(mesh(new THREE.BoxGeometry(0.085, 0.03, 0.085), lampTrimM, 0, 0.015, 0));
+nightLamp.add(mesh(new THREE.BoxGeometry(0.045, 0.17, 0.045), lampStoneM, 0, 0.115, 0));
+nightLamp.add(mesh(new THREE.BoxGeometry(0.07, 0.02, 0.07), lampTrimM, 0, 0.21, 0));
+nightLamp.add(mesh(new THREE.SphereGeometry(0.04, 12, 8), nightLampM, 0, 0.255, 0));
+var nlMoon = mesh(crescentGeo, moonGlowM, 0, 0.33, 0); nlMoon.scale.setScalar(0.35); nightLamp.add(nlMoon);
+var nlHalo = mesh(new THREE.PlaneGeometry(0.34, 0.34), lampHaloM, 0, 0.26, 0); nightLamp.add(nlHalo);
+nightLamp.position.set(PX1 - 0.08, PY + 0.018, PW / 2 - 0.07); pier.add(nightLamp);
+
+// a little moon boat beside the pier, folded like a paper boat, tips curling up like a crescent
+var paperM = toonMat(0xf3f6fc); paperM.side = THREE.DoubleSide; paperM.emissive = lc(0xcfe6ff); paperM.emissiveIntensity = 0;
+var moonBoat = new THREE.Group();
+(function () {
+  var P = [], V3 = function (x, y, z) { return [x, y, z]; };
+  function tri(a, b, c) { P.push.apply(P, a.concat(b, c)); }
+  function quad(a, b, c, d) { tri(a, b, c); tri(a, c, d); }
+  var kA = V3(-0.14, 0, 0), kB = V3(0.14, 0, 0), tA = V3(-0.31, 0.17, 0), tB = V3(0.31, 0.17, 0);
+  [-1, 1].forEach(function (sd) {
+    var rA = V3(-0.2, 0.085, sd * 0.085), rB = V3(0.2, 0.085, sd * 0.085);
+    quad(kA, kB, rB, rA); tri(kB, tB, rB); tri(kA, rA, tA); // hull side + the curled-up ends
+  });
+  // the folded sail: two leaning triangles meeting at the peak
+  [-1, 1].forEach(function (sd) { tri(V3(-0.13, 0.07, sd * 0.03), V3(0.13, 0.07, sd * 0.03), V3(0, 0.29, 0)); });
+  var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals();
+  moonBoat.add(new THREE.Mesh(g, paperM));
+  [-1, 1].forEach(function (sd) { // tiny glowing crescent printed on each side of the sail
+    var c = mesh(crescentGeo, runeM, 0, 0.15, sd * 0.02); c.scale.setScalar(0.28); moonBoat.add(c);
+  });
+  var glow = mesh(new THREE.PlaneGeometry(0.7, 0.45), lampHaloM, 0, 0.005, 0); glow.rotation.x = -Math.PI / 2; moonBoat.add(glow);
+})();
+moonBoat.position.set(PX1 - 0.45, -0.15, PW / 2 + 0.32); moonBoat.rotation.y = 0.35; pier.add(moonBoat);
+var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.position.set(PX1 - 0.08, PY + 0.35, PW / 2 - 0.07); pier.add(pierLight);
 
 // ---- lamps by the clearing (flanking its lagoon side) ----
 [-0.75, 0.75].forEach(function (a) {
@@ -99,6 +129,11 @@ function updateLamps(t, n) {
     m.halo.quaternion.copy(camera.quaternion);
     m.halo.parent.getWorldQuaternion(tmpQ); m.halo.quaternion.premultiply(tmpQ.invert());
   });
-  pierLight.intensity = n * 0.9;
+  pierLight.intensity = n * 0.6;
+  nightLampM.emissiveIntensity = lerp(0.3, 1.6, n); paperM.emissiveIntensity = n * 0.35;
+  nlMoon.rotation.y = t * 0.5 * MM; nlMoon.position.y = 0.33 + Math.sin(t * 1.2) * 0.01 * MM;
+  nlHalo.quaternion.copy(camera.quaternion); nightLamp.getWorldQuaternion(tmpQ); nlHalo.quaternion.premultiply(tmpQ.invert());
+  moonBoat.position.y = -0.15 + Math.sin(t * 1.3) * 0.012 * MM;
+  moonBoat.rotation.z = Math.sin(t * 0.9) * 0.05 * MM; moonBoat.rotation.x = Math.sin(t * 1.1 + 1) * 0.03 * MM;
   clearLight.intensity = n * 0.9;
 }
