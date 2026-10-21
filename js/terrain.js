@@ -69,14 +69,40 @@ var TIER_COL = [
   { top: 0x77b58a, hi: 0xd9dce8, lo: 0xb4b9cc }, // grass terrace, stone wall
   { top: 0x6aab80, hi: 0xdadde9, lo: 0xb6bbce }  // top terrace, stone wall
 ];
+// Underwater foundation (2026-10-21: she saw the straight pulled-down walls through the water and wanted it to tuck
+// inward like the underside of a floating-style island). Below the waterline every vertex slides inward along the
+// crescent's inward direction, more the deeper it is, but never past the middle of the strip (no self-crossing).
+function tuckUnderwater(g, baseY) {
+  var pos = g.attributes.position, e = 0.02;
+  function grad(x, z) {
+    var gx = inside(x + e, z) - inside(x - e, z), gz = inside(x, z + e) - inside(x, z - e), l = Math.hypot(gx, gz) || 1;
+    return [gx / l, gz / l];
+  }
+  for (var v = 0; v < pos.count; v++) {
+    var x = pos.getX(v), z = pos.getZ(v), wy = pos.getY(v) + baseY;
+    if (wy > -0.04) continue;
+    var f = Math.min(1, (-0.04 - wy) / 1.22), want = 1.25 * (1 - Math.sqrt(Math.max(0, 1 - f * f))) + 0.18 * f;
+    // half-width of the strip here: walk inward until inside() stops growing
+    var d = grad(x, z), h = 0, last = inside(x, z);
+    for (var s = 0.03; s < 3; s += 0.03) {
+      var val = inside(x + d[0] * s, z + d[1] * s);
+      if (val <= last + 0.004) break;
+      last = val; h = s;
+    }
+    var a = Math.min(want, h * 0.88);
+    pos.setX(v, x + d[0] * a); pos.setZ(v, z + d[1] * a);
+  }
+  pos.needsUpdate = true;
+}
 var islandMesh = new THREE.Group(); scene.add(islandMesh);
 TIERS.forEach(function (T, k) {
   var bottom = k === 0 ? -1.3 : TIERS[k - 1].top - 0.08, bt = k === 0 ? 0.12 : 0.07, bs = k === 0 ? 0.28 : 0.07;
   var g = new THREE.ExtrudeGeometry(tierShape(T, k), {
     depth: Math.max(0.05, T.top - bottom - 2 * bt), bevelEnabled: true, bevelThickness: bt, bevelSize: bs,
-    bevelSegments: k === 0 ? 3 : 2, curveSegments: 4, steps: 1
+    bevelSegments: k === 0 ? 3 : 2, curveSegments: 4, steps: k === 0 ? 10 : 1
   });
   g.rotateX(-Math.PI / 2);
+  if (k === 0) tuckUnderwater(g, bottom + bt);
   var C = TIER_COL[k], cTop = new THREE.Color(lc(C.top)), cHi = new THREE.Color(lc(C.hi)), cLo = new THREE.Color(lc(C.lo));
   var pos = g.attributes.position, nor = g.attributes.normal, col = new Float32Array(pos.count * 3), c = new THREE.Color();
   var y0 = (k === 0 ? -0.3 : bottom) - bottom - bt, y1 = T.top - bottom - bt;
