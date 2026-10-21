@@ -81,7 +81,7 @@ function tuckUnderwater(g, baseY) {
   for (var v = 0; v < pos.count; v++) {
     var x = pos.getX(v), z = pos.getZ(v), wy = pos.getY(v) + baseY;
     if (wy > -0.04) continue;
-    var f = Math.min(1, (-0.04 - wy) / 1.22), want = 1.25 * (1 - Math.sqrt(Math.max(0, 1 - f * f))) + 0.18 * f;
+    var f = Math.min(1, (-0.04 - wy) / 0.58), want = 0.7 * (1 - Math.sqrt(Math.max(0, 1 - f * f))) + 0.12 * f;
     // half-width of the strip here: walk inward until inside() stops growing
     var d = grad(x, z), h = 0, last = inside(x, z);
     for (var s = 0.03; s < 3; s += 0.03) {
@@ -96,10 +96,10 @@ function tuckUnderwater(g, baseY) {
 }
 var islandMesh = new THREE.Group(); scene.add(islandMesh);
 TIERS.forEach(function (T, k) {
-  var bottom = k === 0 ? -1.3 : TIERS[k - 1].top - 0.08, bt = k === 0 ? 0.12 : 0.07, bs = k === 0 ? 0.28 : 0.07;
+  var bottom = k === 0 ? -0.66 : TIERS[k - 1].top - 0.08, bt = k === 0 ? 0.12 : 0.07, bs = k === 0 ? 0.28 : 0.07;
   var g = new THREE.ExtrudeGeometry(tierShape(T, k), {
     depth: Math.max(0.05, T.top - bottom - 2 * bt), bevelEnabled: true, bevelThickness: bt, bevelSize: bs,
-    bevelSegments: k === 0 ? 3 : 2, curveSegments: 4, steps: k === 0 ? 10 : 1
+    bevelSegments: k === 0 ? 3 : 2, curveSegments: 4, steps: k === 0 ? 6 : 1
   });
   g.rotateX(-Math.PI / 2);
   if (k === 0) tuckUnderwater(g, bottom + bt);
