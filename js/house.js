@@ -242,7 +242,10 @@ var windTree = new THREE.Group(), wtSparkM;
   }
   // trunk: one thick ancient tube with deep spiralling furrows (ridges + grooves, darker in the grooves), wide at
   // the foot and flaring into buttress roots — 2026-10-21 she said the first try looked like a coconut palm.
-  var tp = [new V(0, -0.04, 0), new V(0.02, 0.35, 0.1), new V(0.0, 0.75, 0.18), new V(-0.02, 1.1, 0.1), new V(0.0, 1.36, -0.12), new V(0.02, 1.55, -0.42)];
+  // natural S-bend (she said the smooth arc looked like a bent noodle): the foot leans in, the middle bellies out to
+  // the left, a kink, then the top sweeps away to the right, with knobbly changes in thickness along the way
+  var tp = [new V(0, -0.04, 0), new V(0.03, 0.28, 0.1), new V(-0.03, 0.55, 0.27), new V(0.05, 0.82, 0.33), new V(0.0, 1.05, 0.24),
+    new V(-0.05, 1.22, 0.05), new V(0.03, 1.38, -0.12), new V(0.0, 1.5, -0.42), new V(0.06, 1.6, -0.7)];
   var trunk = new THREE.CatmullRomCurve3(tp);
   (function () {
     var N = 44, M = 30, fr = trunk.computeFrenetFrames(N, false), pos = [], col = [], idx = [];
@@ -250,7 +253,7 @@ var windTree = new THREE.Group(), wtSparkM;
     for (var i = 0; i <= N; i++) {
       var t = i / N, P = trunk.getPoint(t), Nn = fr.normals[i], B = fr.binormals[i];
       var rad = 0.13 + 0.12 * Math.pow(1 - t, 2.2) + 0.16 * Math.pow(Math.max(0, 1 - t * 6), 2); // thick, flared foot
-      rad *= t > 0.85 ? 1 - (t - 0.85) * 2.4 : 1;
+      rad *= (t > 0.85 ? 1 - (t - 0.85) * 2.4 : 1) * (1 + 0.09 * Math.sin(t * 17 + 0.7) + 0.05 * Math.sin(t * 31)); // knots and bulges
       for (var j = 0; j <= M; j++) {
         var th = j / M * Math.PI * 2, tw = th + t * 2.6; // furrows spiral up the trunk
         var fl = Math.sin(tw * 7) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 11 + t * 9) * 0.15; // -1..1
@@ -286,7 +289,9 @@ var windTree = new THREE.Group(), wtSparkM;
   ];
   limbs.forEach(function (L, k) {
     var a = trunk.getPoint(L[0]), b = L[1], c = L[2];
-    bough([a, b, c], 0.085, 0.024, 7);
+    var j1 = a.clone().lerp(b, 0.5).add(new V(Math.sin(k * 2.1) * 0.07, 0.06 + Math.cos(k * 1.7) * 0.04, Math.cos(k * 2.9) * 0.06));
+    var j2 = b.clone().lerp(c, 0.5).add(new V(Math.cos(k * 1.3) * 0.06, Math.sin(k * 2.3) * 0.06 - 0.03, Math.sin(k * 3.7) * 0.07));
+    bough([a, j1, b, j2, c], 0.085, 0.024, 10); // crooked, with a couple of elbows instead of one smooth arc
     [[0.12, 0.08, -0.15], [-0.1, 0.12, 0.05], [0.04, -0.04, -0.3]].forEach(function (o, j) {
       var s = b.clone().lerp(c, 0.55), e = c.clone().add(new V(o[0], o[1], o[2] * (k === 4 ? -0.6 : 1)));
       bough([s, s.clone().lerp(e, 0.5).add(new V(0, 0.05, 0)), e], 0.025, 0.01, 3);
