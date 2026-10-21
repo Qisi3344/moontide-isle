@@ -16,7 +16,7 @@ function topOf(obj, up) {
   var b = new THREE.Box3().setFromObject(obj), c = b.getCenter(new THREE.Vector3());
   return new THREE.Vector3(c.x, b.max.y + (up || 0.15), c.z);
 }
-var castleM = mat(0xd9be8e), orangeM = mat(0xd97757), creamM = mat(0xf6ebdd), barkM = mat(0x8e6340), darkM = mat(0x4a3a30);
+var castleM = mat(0xe4ddd0), orangeM = mat(0xd97757), creamM = mat(0xf6ebdd), barkM = mat(0x8e6340), darkM = mat(0x4a3a30);
 
 // Clawd's sandcastle workshop, on the beach by the south horn
 var workshop = new THREE.Group(); spotsG.add(workshop);
@@ -75,7 +75,7 @@ var pebbles = [];
 var wolfSpot = addSpot(rock, "小灰狼的看月石", null);
 
 // 澜's perch tree, on the slope beside the clearing
-var tree = new THREE.Group(), treeM = mat(0x6daa4f);
+var tree = new THREE.Group(), treeM = mat(0x5f9c7c);
 tree.add(mesh(new THREE.CylinderGeometry(0.09, 0.14, 1.2, 7), barkM, 0, 0.6, 0));
 var branch = mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.72, 6), barkM, 0.44, 0.72, 0);
 branch.rotation.z = -Math.PI / 2 + 0.08; tree.add(branch);
