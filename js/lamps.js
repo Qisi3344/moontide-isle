@@ -8,13 +8,16 @@ var runeM = new THREE.MeshBasicMaterial({ color: lc(0x9fdcff), transparent: true
 var lampHaloM = new THREE.MeshBasicMaterial({ map: dotTex, color: lc(0xa8dcff), transparent: true, opacity: 0,
   depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
 var plankM = [mat(0xeae0cc), mat(0xe1d5bd)], pierPostM = mat(0xa9a3a8);
-// a crescent shape with pointed horns (outer circle arc + squashed inner arc), horns pointing up
+// a thin ring-like crescent (outer circle minus a slightly smaller circle shifted up), horns pointing up
 var crescentGeo = (function () {
-  var sh = new THREE.Shape(), R = 0.12, N = 24, i, t;
-  for (i = 0; i <= N; i++) { t = -Math.PI / 2 + Math.PI * i / N; sh[i ? "lineTo" : "moveTo"](R * Math.cos(t), R * Math.sin(t)); }
-  for (i = N - 1; i > 0; i--) { t = -Math.PI / 2 + Math.PI * i / N; sh.lineTo(R * 0.32 * Math.cos(t), R * Math.sin(t)); }
-  var g = new THREE.ExtrudeGeometry(sh, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2, curveSegments: 4 });
-  g.translate(-R * 0.3, 0, -0.011); g.rotateZ(-Math.PI / 2);
+  var R = 0.12, r = 0.108, e = 0.022, N = 40, i, t;
+  var hy = (R * R - r * r + e * e) / (2 * e), hx = Math.sqrt(R * R - hy * hy); // horn tips
+  var aO = Math.atan2(hy, hx), aI = Math.atan2(hy - e, hx);
+  var sh = new THREE.Shape();
+  for (i = 0; i <= N; i++) { t = aO - (2 * Math.PI - (Math.PI - 2 * aO)) * i / N; sh[i ? "lineTo" : "moveTo"](R * Math.cos(t), R * Math.sin(t)); }
+  for (i = N - 1; i > 0; i--) { t = aI - (2 * Math.PI - (Math.PI - 2 * aI)) * i / N; sh.lineTo(r * Math.cos(t), e + r * Math.sin(t)); }
+  var g = new THREE.ExtrudeGeometry(sh, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.005, bevelSegments: 2, curveSegments: 4 });
+  g.translate(0, 0, -0.01);
   return g;
 })();
 var lampMoons = [], tmpQ = new THREE.Quaternion();
