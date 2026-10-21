@@ -85,7 +85,7 @@ nightLamp.position.set(PX1 - 0.12, PY + 0.018, PW / 2 - 0.1); nightLamp.rotation
 
 // a little moon boat beside the pier, folded like a paper boat, tips curling up like a crescent
 var paperM = toonMat(0xf3f6fc); paperM.side = THREE.DoubleSide; paperM.emissive = lc(0xcfe6ff); paperM.emissiveIntensity = 0;
-var moonBoat = new THREE.Group();
+var moonBoat = new THREE.Group(), boatClothM, boatSail;
 (function () {
   var P = [], V3 = function (x, y, z) { return [x, y, z]; };
   function tri(a, b, c) { P.push.apply(P, a.concat(b, c)); }
@@ -95,16 +95,24 @@ var moonBoat = new THREE.Group();
     var rA = V3(-0.2, 0.085, sd * 0.085), rB = V3(0.2, 0.085, sd * 0.085);
     quad(kA, kB, rB, rA); tri(kB, tB, rB); tri(kA, rA, tA); // hull side + the curled-up ends
   });
-  // the folded sail: two leaning triangles meeting at the peak
-  [-1, 1].forEach(function (sd) { tri(V3(-0.13, 0.07, sd * 0.03), V3(0.13, 0.07, sd * 0.03), V3(0, 0.29, 0)); });
   var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals();
   moonBoat.add(new THREE.Mesh(g, paperM));
-  [-1, 1].forEach(function (sd) { // tiny glowing crescent printed on each side of the sail
-    var c = mesh(crescentGeo, runeM, 0, 0.15, sd * 0.02); c.scale.setScalar(0.28); moonBoat.add(c);
-  });
+  // 2026-10-21: a little sailboat — slim mast + a billowing cloth sail with a glowing crescent on it
+  moonBoat.add(mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.44, 6), mat(0xe6dccb), -0.02, 0.26, 0));
+  var boom = mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.2, 5), mat(0xe6dccb), 0.08, 0.105, 0); boom.rotation.z = Math.PI / 2; moonBoat.add(boom);
+  var clothM = toonMat(0xf7f4ec); clothM.side = THREE.DoubleSide; clothM.emissive = lc(0xcfe6ff); clothM.emissiveIntensity = 0; boatClothM = clothM;
+  var sp = [], si = [], NR = 8, NC = 6;
+  for (var i = 0; i <= NR; i++) for (var j = 0; j <= NC; j++) {
+    var u = i / NR, v = j / NC, w = 0.2 * (1 - u);
+    sp.push(-0.01 + w * v, 0.11 + 0.35 * u, 0.045 * Math.sin(Math.PI * v) * Math.sqrt(1 - u) + 0.015 * v * (1 - u));
+  }
+  for (i = 0; i < NR; i++) for (j = 0; j < NC; j++) { var a0 = i * (NC + 1) + j, a1 = a0 + NC + 1; si.push(a0, a1, a0 + 1, a1, a1 + 1, a0 + 1); }
+  var sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(sp, 3)); sg.setIndex(si); sg.computeVertexNormals();
+  boatSail = new THREE.Mesh(sg, clothM); moonBoat.add(boatSail);
+  var em = mesh(crescentGeo, runeM, 0.055, 0.21, 0.042); em.scale.setScalar(0.3); moonBoat.add(em);
   var glow = mesh(new THREE.PlaneGeometry(0.7, 0.45), lampHaloM, 0, 0.005, 0); glow.rotation.x = -Math.PI / 2; moonBoat.add(glow);
 })();
-moonBoat.position.set(PX1 - 0.45, -0.15, PW / 2 + 0.32); moonBoat.rotation.y = 0.35; pier.add(moonBoat);
+moonBoat.scale.setScalar(1.5); moonBoat.position.set(PX1 - 0.5, -0.15, -(PW / 2 + 0.42)); moonBoat.rotation.y = -0.35; // right side of the pier as seen from the default view pier.add(moonBoat);
 var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.position.set(PX1 - 0.12, PY + 0.2, PW / 2 - 0.1); pier.add(pierLight);
 
 // ---- lamps by the clearing (flanking its lagoon side) ----
@@ -135,7 +143,8 @@ function updateLamps(t, n) {
     m.halo.parent.getWorldQuaternion(tmpQ); m.halo.quaternion.premultiply(tmpQ.invert());
   });
   pierLight.intensity = n * 0.6;
-  nightLampM.emissiveIntensity = lerp(0.3, 1.6, n); paperM.emissiveIntensity = n * 0.35;
+  nightLampM.emissiveIntensity = lerp(0.3, 1.6, n); paperM.emissiveIntensity = n * 0.35; boatClothM.emissiveIntensity = n * 0.3;
+  boatSail.scale.z = 1 + Math.sin(t * 1.7) * 0.15 * MM;
   nlMoon.rotation.y = t * 0.5 * MM; lanGlass.material.emissiveIntensity = lerp(0.3, 1.8, n);
   nlHalo.quaternion.copy(camera.quaternion); nightLamp.getWorldQuaternion(tmpQ); nlHalo.quaternion.premultiply(tmpQ.invert());
   moonBoat.position.y = -0.15 + Math.sin(t * 1.3) * 0.012 * MM;
