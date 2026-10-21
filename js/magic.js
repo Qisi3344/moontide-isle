@@ -34,7 +34,7 @@ var fRocks = [];
   g.add(mesh(rg, fRockM));
   var cap = mesh(new THREE.CylinderGeometry(s * 0.92, s * 0.8, s * 0.16, 7), fGrassM, 0, s * 0.3, 0); g.add(cap);
   if (i % 2 === 0) g.add(mesh(new THREE.IcosahedronGeometry(s * 0.32, 0), fBushM, s * 0.25, s * 0.55, -s * 0.15));
-  if (i === 1) { var mt = makeMoonTree(5); mt.scale.setScalar(0.36); mt.position.set(-s * 0.2, s * 0.36, 0); g.add(mt); }
+  if (i === 1) { var mt = makeMoonTree(5, 0.36 * 1.0); mt.scale.setScalar(0.36); mt.position.set(-s * 0.2, s * 0.36, 0); g.add(mt); }
   g.position.set(q[0], d[2], q[1]);
   // drifting sparkles under each rock
   var n = 10, pos = new Float32Array(n * 3), life = new Float32Array(n);
