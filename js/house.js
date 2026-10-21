@@ -225,44 +225,68 @@ for (var si = 0; si < 4; si++) {
 }
 clearing.visible = false; ring.visible = false;   // the patio replaces the old round paving + ring slabs
 
-// ---- big wind-swept moon tree behind the house, back-left (her sketch, 2026-10-21) ----
-// Trunk rises behind the left (+z) side, leans a little, then the crown is "blown" toward the right (-z): two long
-// near-horizontal limbs reach over both domes with flat, layered leaf pads streaming off their ends, like a
-// windswept cliff pine (迎客松-like structure) but in the island's silver-bark / blue-white leaf style.
-var windTree = new THREE.Group();
+// ---- big wind-swept moon tree behind the house, back-left (her sketch + render, 2026-10-21) ----
+// Thick twisted silver trunk with a wide root flare, leaning out to the left, then arcing hard to the right; five
+// limbs fan out from the bend and split into twigs, all streaming right over both domes. The crown is one broad,
+// flat, lacy layer of small leaf cards (not clumps), slightly drooping at the right end, with blue glints in it.
+var windTree = new THREE.Group(), wtSparkM;
 (function () {
   var V = THREE.Vector3;
-  function bough(pts, r0, r1) { // tapered chain of limbs along a smooth curve
-    var cv = new THREE.CatmullRomCurve3(pts), N = pts.length * 3, prev = cv.getPoint(0);
+  function bough(pts, r0, r1, seg) { // tapered chain of limbs along a smooth curve
+    var cv = new THREE.CatmullRomCurve3(pts), N = seg || pts.length * 3, prev = cv.getPoint(0);
     for (var i = 1; i <= N; i++) {
       var q = cv.getPoint(i / N), ra = r0 + (r1 - r0) * (i - 1) / N, rb = r0 + (r1 - r0) * i / N;
       windTree.add(limb(prev, q, ra, rb, moonBarkM)); prev = q;
     }
     return cv;
   }
-  var trunk = bough([new V(0, 0, 0), new V(0.04, 0.4, 0.1), new V(0.0, 0.85, 0.07), new V(-0.03, 1.25, -0.1),
-    new V(0.0, 1.58, -0.45), new V(0.03, 1.8, -0.9), new V(0.06, 1.92, -1.4)], 0.12, 0.035);
-  var low = bough([new V(-0.02, 1.2, -0.06), new V(0.08, 1.42, -0.45), new V(0.16, 1.52, -0.9), new V(0.2, 1.55, -1.25)], 0.06, 0.025);
-  bough([new V(0.0, 0.95, 0.06), new V(-0.06, 1.12, 0.2), new V(-0.1, 1.24, 0.3)], 0.045, 0.02); // little back-left twig
-  for (var r = 0; r < 5; r++) { // flared roots
-    var ra = r / 5 * Math.PI * 2 + 0.4;
-    windTree.add(limb(new V(0, 0.16, 0), new V(Math.cos(ra) * 0.26, -0.02, Math.sin(ra) * 0.26), 0.06, 0.018, moonBarkM));
+  // trunk: two intertwined strands make it read thick and twisted
+  var tp = [new V(0, 0, 0), new V(0.02, 0.38, 0.12), new V(0.0, 0.78, 0.2), new V(-0.02, 1.12, 0.12), new V(0.0, 1.38, -0.1), new V(0.02, 1.55, -0.38)];
+  var trunk = bough(tp, 0.2, 0.08, 18);
+  bough(tp.map(function (p, k) { return new V(p.x + Math.sin(k * 1.3) * 0.06, p.y, p.z + Math.cos(k * 1.3) * 0.05); }), 0.12, 0.05, 18);
+  for (var r = 0; r < 7; r++) { // big flared roots
+    var ra = r / 7 * Math.PI * 2 + 0.3, rl = 0.3 + (r % 3) * 0.08;
+    bough([new V(0, 0.3, 0), new V(Math.cos(ra) * rl * 0.45, 0.1, Math.sin(ra) * rl * 0.45), new V(Math.cos(ra) * rl, -0.02, Math.sin(ra) * rl)], 0.09, 0.02, 4);
   }
-  // flat leaf pads: each pad is a set of blobs squashed vertically, trailing off toward -z (the wind side)
-  function pad(cx, cy, cz, len, wid, n, seed) {
-    var blobs = [], k;
-    for (k = 0; k < 5; k++) blobs.push([cx + (k % 2 ? 0.06 : -0.05), cy + (k === 2 ? 0.04 : 0), cz - len * k / 4, wid * (1 - 0.12 * Math.abs(k - 1.5))]);
-    var m = leafCards(blobs, [cx, cy - 0.3, cz - len / 2], 1, seed, n);
-    var gp = new THREE.Group(); gp.add(m);
-    gp.position.set(0, cy, 0); m.position.y = -cy; gp.scale.y = 0.5;
-    windTree.add(gp);
+  // limbs fanning right from the bend, each splitting into twigs; tips feed the crown
+  var tips = [];
+  var limbs = [ // [start t on trunk, mid, end]
+    [0.78, new V(-0.12, 1.75, -0.55), new V(-0.2, 1.95, -1.1)],
+    [0.84, new V(0.0, 1.82, -0.75), new V(0.02, 1.98, -1.45)],
+    [0.9, new V(0.14, 1.72, -0.8), new V(0.22, 1.82, -1.5)],
+    [0.95, new V(0.05, 1.6, -0.9), new V(0.08, 1.6, -1.7)],
+    [0.7, new V(-0.06, 1.55, 0.05), new V(-0.1, 1.85, 0.22)] // short one back over the left
+  ];
+  limbs.forEach(function (L, k) {
+    var a = trunk.getPoint(L[0]), b = L[1], c = L[2];
+    bough([a, b, c], 0.065, 0.022, 7);
+    [[0.12, 0.08, -0.15], [-0.1, 0.12, 0.05], [0.04, -0.04, -0.3]].forEach(function (o, j) {
+      var s = b.clone().lerp(c, 0.55), e = c.clone().add(new V(o[0], o[1], o[2] * (k === 4 ? -0.6 : 1)));
+      bough([s, s.clone().lerp(e, 0.5).add(new V(0, 0.05, 0)), e], 0.025, 0.01, 3);
+      tips.push(e);
+    });
+    tips.push(c, b.clone().lerp(c, 0.5));
+  });
+  // crown: one broad flat lacy layer of small cards over all tips, plus fill blobs between them
+  var blobs = [];
+  tips.forEach(function (t) { blobs.push([t.x, t.y + 0.02, t.z, 0.22]); });
+  for (var z = 0.2; z > -1.75; z -= 0.22) {
+    var droop = z < -1.2 ? (z + 1.2) * 0.35 : 0;
+    blobs.push([-0.05 + Math.sin(z * 5) * 0.12, 1.96 + droop + Math.cos(z * 3) * 0.05, z, 0.26]);
   }
-  pad(0.06, 1.98, -0.85, 0.85, 0.3, 300, 41);  // top pad along the main limb end
-  pad(0.0, 2.1, -0.55, 0.55, 0.24, 160, 43);   // little upper layer
-  pad(0.2, 1.6, -0.85, 0.55, 0.26, 200, 47);   // lower pad on the second limb
-  pad(-0.1, 1.3, 0.3, 0.12, 0.17, 70, 49);     // small tuft on the back-left twig
+  var crown = leafCards(blobs, [0, 1.6, -0.7], 0.62, 51, 1300);
+  var cg = new THREE.Group(); cg.add(crown); cg.position.y = 1.9; crown.position.y = -1.9; cg.scale.y = 0.55;
+  windTree.add(cg);
+  // blue glints in the crown and along the trunk (glow at night)
+  var sp = [], rs = 77;
+  function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+  for (var k = 0; k < 90; k++) { var b = blobs[Math.floor(R() * blobs.length)]; sp.push(b[0] + (R() - 0.5) * 0.4, 1.9 + (b[1] - 1.9) * 0.55 + (R() - 0.5) * 0.18, b[2] + (R() - 0.5) * 0.4); }
+  for (k = 0; k < 24; k++) { var q = trunk.getPoint(R()); sp.push(q.x + (R() - 0.5) * 0.2, q.y, q.z + (R() - 0.5) * 0.2); }
+  var sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(sp, 3));
+  wtSparkM = new THREE.PointsMaterial({ color: lc(0x8fd0ff), size: 0.045, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending });
+  windTree.add(new THREE.Points(sg, wtSparkM));
 })();
-windTree.position.set(-0.52, 0.02, 0.72);
+windTree.position.set(-0.5, 0.02, 0.74);
 house.add(windTree);
 
 house.position.set(CX - 0.18, HC, 0.05);
@@ -279,6 +303,7 @@ function updateHouse(t, n) {
   hCrystalM.emissiveIntensity = lerp(0.3, 1.6, n);
   hStepGlowM.opacity = lerp(0.2, 0.85, n);
   stoveLight.intensity = n * 0.6;
+  wtSparkM.opacity = lerp(0.15, 1, n);
   hLight.intensity = n * 1.1;
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
