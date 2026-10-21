@@ -29,10 +29,11 @@ var timeU = { value: 0 }, nightU = { value: 0 };
 
 var MOON_DIR = new THREE.Vector3(-0.55, 0.5, -0.67).normalize();
 var SUN_DIR = new THREE.Vector3(0.65, 0.6, 0.45).normalize();
-// A soft moon pinned to the upper-left of the view (she asked for a moon with a gentle glow, 2026-10-21).
-// The camera looks down on the island so the real sky is barely in frame; the moon rides on the camera instead,
-// 45 units out: far sea and seabed sit behind it, the island stays in front. Pale moon-white + blue halo, no purple.
-// Faint by day, glowing at night.
+// A soft moon hanging far off in the background (she asked for a moon with a gentle glow, 2026-10-21; then said
+// it should hang fixed in the distance, not sit on the island). The camera looks down on the island so the real sky
+// is out of frame; the moon rides on the camera 60 units out (behind the whole island, in front of the far seabed),
+// near the top edge, but its bearing is fixed in the world: turning the island slides it across and off the view
+// like something far away. Pale moon-white + blue halo, no purple. Faint by day, glowing at night.
 var moonU = { uNight: nightU, uTime: timeU };
 var moon = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShaderMaterial({
   uniforms: moonU, transparent: true, depthWrite: false, fog: false,
@@ -57,10 +58,18 @@ var moon = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShaderMater
 }));
 moon.renderOrder = 999; // drawn last: depth-tested against the island, over the far sea
 camera.add(moon); scene.add(camera);
-function placeMoon() { // keep it in the upper-left whatever the screen shape
-  var D = 45, tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), th = tv * camera.aspect;
-  moon.position.set(-D * th * Math.min(0.62, 0.5 + 0.1 / camera.aspect), D * tv * 0.62, -D);
-  var s = Math.min(1, camera.aspect * 0.9 + 0.25); moon.scale.setScalar(s);
+var MOON_AZ = THREE.MathUtils.degToRad(62) + Math.PI + 0.32, moonD = 60, moonTv = 0.4, moonTh = 0.4;
+function placeMoon() { // called from fit(): size for the screen shape
+  moonTv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); moonTh = moonTv * camera.aspect;
+  moon.scale.setScalar(Math.min(1, camera.aspect * 0.75 + 0.3) * 1.25);
+}
+function updateMoon() { // every frame: fixed world bearing, held near the top of the view
+  var dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z;
+  var viewAz = Math.atan2(dx, dz) + Math.PI, d = MOON_AZ - viewAz;
+  d = Math.atan2(Math.sin(d), Math.cos(d));
+  var x = -Math.tan(d) / moonTh; // -1..1 across the screen
+  moon.visible = Math.abs(d) < 1.3 && Math.abs(x) < 1.35;
+  moon.position.set(x * moonD * moonTh, moonD * moonTv * 0.8, -moonD);
 }
 
 // ---------- lights ----------
