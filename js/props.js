@@ -8,7 +8,7 @@ var stoneM = mat(0xdcdfe8), trunkM = mat(0x857b84), bloomM = [mat(0xf1f3fb), mat
 // a gentle bulge noise by position so shared corners stay closed
 var rockVM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true });
 rockVM.onBeforeCompile = function (sh) { sh.uniforms.uRim = rimU; };
-var rockTop = lc(0xf1f4fa), rockMid = lc(0xc9d2e4), rockBot = lc(0x8996b6);
+var rockTop = lc(0xe3e8f1), rockMid = lc(0xc9d2e4), rockBot = lc(0x8996b6);
 function rockGeo(r, seed, sy, flatTop) {
   var g = new THREE.IcosahedronGeometry(r, 1), p = g.attributes.position, sd = seed || 0, c = new THREE.Color(), col = [];
   for (var i = 0; i < p.count; i++) {
@@ -81,7 +81,7 @@ leafCardM.onBeforeCompile = function (sh) {
     "outgoingLight += vec3(0.8, 0.88, 1.0) * smoothstep(0.62, 0.8, rimF) * uRim;\n#include <output_fragment>");
 };
 moonLeafM.push(leafCardM);
-var leafTones = [lc(0xf4f8ff), lc(0xd3e4f7), lc(0xb4cff0), lc(0x9dbde6)];
+var leafTones = [lc(0xe6eef9), lc(0xcfdff3), lc(0xb4cff0), lc(0x9dbde6)];
 // canopy blob with normals pointing out from canopy centre c (blob centre b, radius r)
 function canopyBlob(b, r, c, m) {
   var g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3();
