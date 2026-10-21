@@ -35,12 +35,13 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 (function (c) { c.left = -7.5; c.right = 7.5; c.top = 7.5; c.bottom = -7.5; c.near = 2; c.far = 45; c.updateProjectionMatrix(); })(sun.shadow.camera);
-sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.025;
+sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.06; // grazing sun on walls: no acne stripes
 scene.traverse(function (o) {
   if (!o.isMesh || o === sea) return;
   var m = Array.isArray(o.material) ? o.material[0] : o.material;
   if (!m || m.transparent || m.isMeshBasicMaterial || m.isShaderMaterial) return;
-  o.castShadow = true; o.receiveShadow = true;
+  // thin grass/flower strips made long stripe shadows down the cliff walls under the low sun (2026-10-21)
+  o.castShadow = !(o.material === grassBladeM || o.material === grassFlowerM || o.material === starPinkM); o.receiveShadow = true;
 });
 
 // ---------- loop ----------
