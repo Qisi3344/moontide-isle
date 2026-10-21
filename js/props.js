@@ -19,12 +19,15 @@ for (var s = 0; s < 12; s++) {
 var moonBarkM = mat(0xdde3ee), moonLeafM = [mat(0xeef4fc), mat(0xc9ddf4), mat(0xa8c6ea)];
 moonLeafM.forEach(function (m, k) { m.emissive = lc(k ? 0x9cc8ff : 0xdcecff); m.emissiveIntensity = 0; });
 var leafTimeU = { value: 0 };
-var leafTex = (function () { // a little cluster of rounded leaves, white on transparent
+var leafTex = (function () { // a spray of pointed almond leaves, white on transparent
   var c = document.createElement("canvas"); c.width = c.height = 64;
   var g = c.getContext("2d"); g.fillStyle = "#fff";
-  [[32, 30, 15, 9, 0.3], [20, 22, 11, 7, -0.7], [44, 22, 11, 7, 0.8], [22, 42, 11, 7, 0.6], [43, 42, 11, 7, -0.5], [32, 48, 9, 6, 0]].forEach(function (l) {
-    g.save(); g.translate(l[0], l[1]); g.rotate(l[4]); g.beginPath(); g.ellipse(0, 0, l[2], l[3], 0, 0, Math.PI * 2); g.fill(); g.restore();
-  });
+  function leaf(x, y, L, W, a) {
+    g.save(); g.translate(x, y); g.rotate(a); g.beginPath();
+    g.moveTo(0, -L); g.quadraticCurveTo(W, 0, 0, L); g.quadraticCurveTo(-W, 0, 0, -L); g.fill(); g.restore();
+  }
+  leaf(32, 30, 20, 13, 0); leaf(19, 33, 15, 10, -0.9); leaf(45, 33, 15, 10, 0.9);
+  leaf(24, 47, 12, 8, -0.4); leaf(40, 47, 12, 8, 0.4);
   return new THREE.CanvasTexture(c);
 })();
 var leafCardM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true });
@@ -61,10 +64,11 @@ function leafCards(blobs, c, sc, seed, count) {
   for (var k = 0; k < N; k++) {
     var b = blobs[Math.floor(R() * blobs.length)];
     d.set(R() * 2 - 1, R() * 2 - 1, R() * 2 - 1).normalize();
-    v.set(b[0] + d.x * b[3] * 0.92, b[1] + d.y * b[3] * 0.92, b[2] + d.z * b[3] * 0.92);
+    var rr = b[3] * (0.3 + 0.7 * Math.sqrt(R()));
+    v.set(b[0] + d.x * rr, b[1] + d.y * rr, b[2] + d.z * rr);
     var nn = new THREE.Vector3(v.x - c[0], v.y - c[1], v.z - c[2]).normalize();
     var h = (v.y - bot) / Math.max(0.01, top - bot), tone = leafTones[Math.min(3, Math.max(0, Math.floor((1 - h) * 3.2 + R() * 0.9)))];
-    var sz = (0.13 + R() * 0.08) * sc, base = pos.length / 3;
+    var sz = (0.17 + R() * 0.09) * sc, base = pos.length / 3;
     [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(function (q) {
       pos.push(v.x, v.y, v.z); nor.push(nn.x, nn.y, nn.z); uv.push(q[0], q[1]); col.push(tone.r, tone.g, tone.b); size.push(sz);
     });
@@ -98,8 +102,7 @@ function makeMoonTree(seed, sc) {
   }
   var c = [0, 1.05, 0];
   var blobs = [[0, 1.05, 0, 0.4], [0.36, 0.92, 0.1, 0.29], [-0.34, 0.93, -0.06, 0.3], [0.08, 0.96, -0.33, 0.27], [-0.08, 1.27, 0.08, 0.25], [0.22, 1.2, 0.2, 0.21], [-0.18, 1.0, 0.3, 0.22]];
-  blobs.forEach(function (b, k) { g.add(canopyBlob(b, b[3] * 0.9, c, moonLeafM[(k + s) % 3])); });
-  g.add(leafCards(blobs, c, sc || 1, s + 1, 80));
+  g.add(leafCards(blobs, c, sc || 1, s + 1, 230)); // canopy is leaf cards only, no solid balls
   return g;
 }
 function blossom(x, z, sc, seed) {
