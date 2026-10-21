@@ -9,7 +9,7 @@ var seaU = {
   uTime: timeU, uNight: nightU, uRip: { value: rip }, uWave: { value: reduce ? 0.35 : 1 },
   uSun: { value: SUN_DIR.clone() }, uFog: { value: DAY.bot.clone() }, uSky: { value: DAY.top.clone() },
   // pre-blend colors so the sea over the sand reads mint #7FD8CB near shore, #3FA6BC outside
-  uShallow: { value: lc(0x5eeae6) }, uDeep: { value: lc(0x2c7fd2) }
+  uShallow: { value: lc(0x4fe0e0) }, uDeep: { value: lc(0x1f63c0) }
 };
 var seaG = new THREE.RingGeometry(0.001, 42, 180, 90);
 (function densify() {
@@ -25,7 +25,8 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   vertexShader: [
     "uniform float uTime,uWave; uniform vec4 uRip[6]; varying vec3 vW; varying vec3 vN;",
     "float H(vec2 p){ float t=uTime;",
-    " float h=uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t));",
+    " float far=smoothstep(4.,14.,length(p));",
+    " float h=uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t)+far*(0.06*sin(0.9*p.x-0.6*p.y+1.6*t)+0.035*sin(1.7*p.y+0.8*p.x-2.1*t)));",
     " for(int i=0;i<6;i++){ vec4 r=uRip[i]; float a=t-r.z;",
     "  if(r.w>0.0 && a>0.0 && a<7.0){ float d=distance(p,r.xy);",
     "   float front=smoothstep(a*3.2+0.8,a*3.2-0.8,d);",
@@ -41,7 +42,8 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
     "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
     " float s=max(0.,-inside(vW.xz)-0.12);",
-    " vec3 c=mix(uShallow,uDeep,smoothstep(0.3,7.0,s));",
+    " float lag=(1.-smoothstep(2.4,3.6,length(vW.xz-vec2(2.4,0.))))*(1.-smoothstep(4.4,5.6,length(vW.xz))); float sd=s*(1.-0.8*lag);",
+    " vec3 c=mix(uShallow,uDeep,smoothstep(0.2,2.6,sd)); c=mix(c,vec3(0.008,0.0497,0.2542),smoothstep(4.,18.,sd)*0.75);",
     " float dif=max(dot(n,uSun),0.);",
     " c*=(0.62+0.38*dif)*mix(vec3(1.),vec3(0.18,0.23,0.56),uNight);",
     " vec3 hv=normalize(uSun+v); float sp=pow(max(dot(n,hv),0.),110.)*1.5+pow(max(dot(n,hv),0.),14.)*0.18;",
@@ -49,11 +51,10 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " c+=fr*mix(0.15,0.3,uNight)*mix(uSky,vec3(0.6,0.5,1.),uNight);",
     " float wob=sin(atan(vW.z,vW.x)*14.+uTime*1.4)*0.08;",
     " float foam=1.-smoothstep(0.12,0.45+wob,s);",
-    " float band=abs(s-(0.85+0.12*sin(uTime*0.9)+wob)); foam=max(foam,(1.-smoothstep(0.04,0.11,band))*0.55);",
     " c=mix(c,vec3(1.,0.99,0.95)*mix(1.,0.55,uNight),foam*0.5);",
     " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
     " c+=vec3(1.)*sp*mix(1.,0.7,uNight);",
-    " float a=mix(0.7,0.92,smoothstep(0.,8.,s)); a=max(a,foam*0.5); a=max(a,min(sp,1.));",
+    " float a=mix(0.78,0.97,smoothstep(0.,3.,s)); a=max(a,foam*0.5); a=max(a,min(sp,1.));",
     " c=mix(c,uFog,smoothstep(22.,38.,r)); a*=1.-smoothstep(28.,41.,r);",
     " gl_FragColor=vec4(c,a);",
     "#include <encodings_fragment>",
