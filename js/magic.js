@@ -25,9 +25,10 @@ var fRocks = [];
   var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
   var rg = new THREE.IcosahedronGeometry(s, 0), rp = rg.attributes.position;
   for (var k = 0; k < rp.count; k++) {
-    var y = rp.getY(k);
+    // displace by position (not vertex index) so shared corners move together and faces stay closed
+    var x = rp.getX(k), y = rp.getY(k), z = rp.getZ(k);
     rp.setY(k, y > 0 ? y * 0.35 : y * 1.25);              // flat top, pointy bottom
-    rp.setX(k, rp.getX(k) * (1 + 0.12 * Math.sin(k * 2.3)));
+    rp.setX(k, x * (1 + 0.12 * Math.sin(x * 7.1 / s + z * 4.3 / s + i)));
   }
   rg.computeVertexNormals();
   g.add(mesh(rg, fRockM));
