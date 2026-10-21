@@ -9,7 +9,7 @@ function fit() {
   var vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
   baseDist = Math.max(6.4 / Math.tan(hf / 2), 7.5 / Math.tan(vf / 2));
   controls.minDistance = baseDist * 0.6; controls.maxDistance = baseDist * 1.3;
-  scene.fog.near = baseDist + 25; scene.fog.far = baseDist + 110;
+  scene.fog.near = baseDist + 18; scene.fog.far = Math.min(baseDist + 60, 85); // seabed edge (r 90) fully in haze: no hard horizon line
   placeMoon();
 }
 fit();
