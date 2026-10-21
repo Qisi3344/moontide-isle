@@ -3,7 +3,7 @@
 // ---------- sky, stars, moon ----------
 // Day = a low golden-hour sun (2026-10-21: she wanted day to feel like just-after-sunrise / sunset glow, not noon; the isle
 // isn't on Earth anyway). Apricot horizon, soft blue zenith, warm gold key light, cool blue shade. No purple.
-var DAY = { top: lc(0x7ea6d6), bot: lc(0xf6c7a2), hemi: lc(0xc4d3ef), ground: lc(0x8796be), dir: lc(0xffc58e) };
+var DAY = { top: lc(0x7ea6d6), bot: lc(0xf6c7a2), hemi: lc(0xc9d0e8), ground: lc(0x8e98bc), dir: lc(0xffc58e) };
 var NIGHT = { top: lc(0x141c4d), bot: lc(0x4a5aa8), hemi: lc(0x6d74c9), ground: lc(0x3a3f6e), dir: lc(0x9fb4ff) };
 var timeU = { value: 0 }, nightU = { value: 0 };
 var SUN_DIR = new THREE.Vector3(0.14, 0.36, -0.99).normalize(); // low sun off to the right of the default view: side light, long shadows
