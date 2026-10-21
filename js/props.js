@@ -201,8 +201,10 @@ var starFlowerG = (function () {
 })();
 var budG = new THREE.SphereGeometry(0.024, 8, 6);
 // little glowing mushrooms tucked at stone edges and tree roots (2026-10-21, she asked for a few)
-var shroomStemM = toonMat(0xe9eef7), shroomCapM = toonMat(0xcfe9ff);
-shroomCapM.emissive = lc(0x7fd0ff); shroomCapM.emissiveIntensity = 0.1;
+// caps in soft beige-pink and beige-blue (she asked for colour, 2026-10-21: not every plant white)
+var shroomStemM = toonMat(0xf2ece3), shroomCapM = toonMat(0xf1c9c4), shroomCapM2 = toonMat(0xb9d3ee);
+shroomCapM.emissive = lc(0xffa9a0); shroomCapM.emissiveIntensity = 0.1; shroomCapM2.emissive = lc(0x86c4ff); shroomCapM2.emissiveIntensity = 0.1;
+var starPinkM = new THREE.MeshToonMaterial({ color: lc(0xf6d6d2), gradientMap: toonGrad, side: THREE.DoubleSide }); starPinkM.emissive = lc(0xffb8b0); starPinkM.emissiveIntensity = 0.1;
 var shroomCapG = new THREE.SphereGeometry(0.05, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
 function shrooms(parent, x, z, seed, n) {
   var rs = seed * 4111 + 7; function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
@@ -213,7 +215,7 @@ function shrooms(parent, x, z, seed, n) {
     var s = (i ? 0.45 + R() * 0.35 : 0.85), hh = 0.07 * s + 0.02, g = new THREE.Group();
     g.position.set(px, y0 - 0.005, pz); g.rotation.set((R() - 0.5) * 0.35, R() * 6, (R() - 0.5) * 0.35);
     var st = new THREE.Mesh(new THREE.CylinderGeometry(0.011 * s + 0.004, 0.015 * s + 0.005, hh, 6), shroomStemM); st.position.y = hh / 2; g.add(st);
-    var cp = new THREE.Mesh(shroomCapG, shroomCapM); cp.position.y = hh - 0.004; cp.scale.set(s, s * 0.7, s); g.add(cp);
+    var cp = new THREE.Mesh(shroomCapG, (i + seed) % 2 ? shroomCapM : shroomCapM2); cp.position.y = hh - 0.004; cp.scale.set(s, s * 0.7, s); g.add(cp);
     parent.add(g);
   }
 }
@@ -258,7 +260,7 @@ function makeGrassTuft(seed, blades, flowers) {
     var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.007, fh, 4), grassBladeM);
     stem.position.set(fx, fh / 2, fz); g.add(stem);
     if (f % 3 === 2) {
-      var fl = new THREE.Mesh(starFlowerG, grassFlowerM);
+      var fl = new THREE.Mesh(starFlowerG, starPinkM);
       fl.position.set(fx, fh + 0.005, fz); fl.rotation.set(-Math.PI / 2 + (R() - 0.5) * 0.9, 0, R() * 6.3);
       fl.scale.setScalar(0.8 + R() * 0.5); g.add(fl);
     } else {
