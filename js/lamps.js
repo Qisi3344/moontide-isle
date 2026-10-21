@@ -50,13 +50,13 @@ function moonLamp(x, z, ry, y) {
 
 // ---- pier: from the beach by the north horn (beside 小灰狼's moon rock) out to the open sea ----
 // built along local +x, then turned to point straight out from the island so the lagoon stays clear
-var pier = new THREE.Group(), PX0 = 0, PX1 = 2.05, PW = 0.46, PY = 0.04, PTH = THREE.MathUtils.degToRad(62), PD0 = 4.72;
+var pier = new THREE.Group(), PX0 = 0, PX1 = 1.55, PW = 0.46, PY = 0.04, PTH = THREE.MathUtils.degToRad(62), PD0 = 4.72;
 for (var px = PX0, pk = 0; px < PX1; px += 0.17, pk++) {
   var pl = mesh(new THREE.BoxGeometry(0.15, 0.035, PW * (1 + 0.04 * Math.sin(pk * 2.1))), plankM[pk % 2], px + 0.075, PY, 0.012 * Math.sin(pk * 1.3));
   pl.rotation.y = 0.02 * Math.sin(pk * 3.7);
   pier.add(pl);
 }
-[0.55, 1.05, 1.55, PX1 - 0.05].forEach(function (x) {
+[0.55, 1.05, PX1 - 0.05].forEach(function (x) {
   [-1, 1].forEach(function (s) {
     pier.add(mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.95, 7), pierPostM, x, PY - 0.42, s * (PW / 2 - 0.02)));
   });
