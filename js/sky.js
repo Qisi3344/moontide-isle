@@ -29,13 +29,39 @@ var timeU = { value: 0 }, nightU = { value: 0 };
 
 var MOON_DIR = new THREE.Vector3(-0.55, 0.5, -0.67).normalize();
 var SUN_DIR = new THREE.Vector3(0.65, 0.6, 0.45).normalize();
-var moon = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), new THREE.ShaderMaterial({
-  uniforms: { uNight: nightU }, transparent: true, depthWrite: false, fog: false,
+// A soft moon pinned to the upper-left of the view (she asked for a moon with a gentle glow, 2026-10-21).
+// The camera looks down on the island so the real sky is barely in frame; the moon rides on the camera instead,
+// 45 units out: far sea and seabed sit behind it, the island stays in front. Pale moon-white + blue halo, no purple.
+// Faint by day, glowing at night.
+var moonU = { uNight: nightU, uTime: timeU };
+var moon = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShaderMaterial({
+  uniforms: moonU, transparent: true, depthWrite: false, fog: false,
   vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
-  fragmentShader: "uniform float uNight; varying vec2 vUv; void main(){ vec2 p=vUv-.5; float d=length(p); float disc=smoothstep(.2,.19,d)*smoothstep(.17,.185,length(p-vec2(.085,.06))); float glow=smoothstep(.5,.15,d)*.25; vec3 c=mix(vec3(.75,.7,1.),vec3(1.,.96,.78),disc); gl_FragColor=vec4(c,(disc+glow*(1.-disc))*uNight); }"
+  fragmentShader: [
+    "uniform float uNight,uTime; varying vec2 vUv;",
+    "float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }",
+    "float n(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.),f.x),f.y); }",
+    "void main(){ vec2 p=vUv-.5; float d=length(p), R=.115;",
+    "  float disc=smoothstep(R,R-.006,d);",
+    "  float mare=n(p*26.+3.)*.6+n(p*55.)*.4; mare=smoothstep(.5,.75,mare);",
+    "  float rim=smoothstep(R*.55,R,d);",
+    "  vec3 c=mix(vec3(1.,.99,.95),vec3(.82,.88,.98),mare*.55+rim*.25);",
+    "  float pulse=1.+.06*sin(uTime*.8);",
+    "  float glow=(exp(-(d-R)*14.)*.55+exp(-(d-R)*5.)*.25)*step(R-.006,d)*pulse;",
+    "  float k=mix(.32,1.,uNight);",
+    "  vec3 gc=mix(vec3(.85,.92,1.),vec3(.72,.85,1.),clamp((d-R)*3.,0.,1.));",
+    "  vec3 col=mix(gc,c,disc); float a=(disc+glow*(1.-disc))*k*smoothstep(.5,.4,d);",
+    "  gl_FragColor=vec4(col,a);",
+    "#include <encodings_fragment>",
+    "}"].join("\n")
 }));
-moon.position.copy(MOON_DIR).multiplyScalar(220);
-scene.add(moon);
+moon.renderOrder = 999; // drawn last: depth-tested against the island, over the far sea
+camera.add(moon); scene.add(camera);
+function placeMoon() { // keep it in the upper-left whatever the screen shape
+  var D = 45, tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), th = tv * camera.aspect;
+  moon.position.set(-D * th * Math.min(0.62, 0.5 + 0.1 / camera.aspect), D * tv * 0.62, -D);
+  var s = Math.min(1, camera.aspect * 0.9 + 0.25); moon.scale.setScalar(s);
+}
 
 // ---------- lights ----------
 var hemi = new THREE.HemisphereLight(DAY.hemi.clone(), DAY.ground.clone(), 0.45);
