@@ -1,11 +1,27 @@
-/* 月汐小岛 · house.js — 我们的小房子：月白双圆顶小屋，只有窗、木门和灯笼是暖橙色 */
+/* 月汐小岛 · house.js — 我们的小房子：挪德卡莱味的月白石屋，陡坡蓝石瓦屋顶，暖窗、木门、小火炉 */
 "use strict";
+// Style (her ask 2026-10-21): Genshin Nod-Krai / Frostmoon Scions feel — Nordic-Slavic cottage, NOT a temple.
+// Moon-white stone walls, steep blue-slate gable roofs, silver-fir beams, a carved crescent in the front gable,
+// a blue cloth awning, a bench, a little iron stove with a kettle, a hanging spider plant and moon-grass pots.
 // Mix of her two references: the cosy two-dome cottage shape (arched windows, little balcony, wooden door,
 // low stone wall) dressed in the island's moonstone white + pale blue, so the only warm light on the
 // whole island is our windows. A small moon crystal on the dome tip and faint blue step lights from the other one.
 var house = new THREE.Group();
 var hWallM = mat(0xf0f2f8), hTrimM = mat(0xdde3ef), hDomeM = mat(0xd6e3f5), hBaseM = mat(0xc4cde0);
 var hWoodM = mat(0x9a6a4b), hWoodDarkM = mat(0x6f4a35), hIronM = mat(0x5d6478);
+var hBeamM = mat(0xb3a28d), hClothM = mat(0x6f95cc), hClothLightM = mat(0xeef3fb);
+var slateTex = (function () { // overlapping rounded slate rows
+  var c = document.createElement("canvas"); c.width = c.height = 128; var x = c.getContext("2d");
+  x.fillStyle = "#8ea6c7"; x.fillRect(0, 0, 128, 128);
+  for (var r = 0; r < 8; r++) for (var k = -1; k < 9; k++) {
+    var cx = k * 16 + (r % 2) * 8, cy = r * 16 + 16;
+    x.fillStyle = (r + k) % 3 ? "#8ea6c7" : "#9ab1d0";
+    x.beginPath(); x.moveTo(cx - 8, cy - 16); x.lineTo(cx - 8, cy - 6); x.arc(cx, cy - 6, 8, Math.PI, 0, true); x.lineTo(cx + 8, cy - 16); x.fill();
+    x.strokeStyle = "#6c82a8"; x.lineWidth = 1.5; x.beginPath(); x.arc(cx, cy - 6, 8, Math.PI, 0, true); x.stroke();
+  }
+  var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; return t;
+})();
+function slateMat(rx, ry) { var m = toonMat(0xffffff), t = slateTex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); m.map = t; return m; }
 var hWinM = mat(0xffd59a); hWinM.emissive = lc(0xffb35c); hWinM.emissiveIntensity = 0.25;
 var hCrystalM = mat(0xe6f2ff); hCrystalM.emissive = lc(0x8cc4ff); hCrystalM.emissiveIntensity = 0.3;
 var hStepGlowM = new THREE.MeshBasicMaterial({ color: lc(0x9fd0ff), transparent: true, opacity: 0.2 });
@@ -33,23 +49,48 @@ function archWindow(parent, x, y, z, w, h, door) {
   }
   parent.add(g); return g;
 }
-function dome(parent, x, y, z, r) {
-  parent.add(mesh(new THREE.CylinderGeometry(r * 1.02, r * 1.05, r * 0.22, 20), hTrimM, x, y + r * 0.11, z)); // drum
-  var d = mesh(new THREE.SphereGeometry(r, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), hDomeM, x, y + r * 0.22, z);
-  d.scale.y = 0.82; parent.add(d);
-  return y + r * 0.22 + r * 0.82;
+// steep gable roof, ridge along x: slate slabs + a wall-coloured attic prism underneath. returns ridge height
+function gableRoof(parent, x, y, z, len, span, h, ov, rx) {
+  var half = span / 2, s = half + ov, L = Math.hypot(s, h), a = Math.atan2(h, s);
+  var tri = new THREE.Shape(); tri.moveTo(-half, 0); tri.lineTo(half, 0); tri.lineTo(0, h * (1 - ov / s) + ov * h / s - 0.01); tri.lineTo(-half, 0);
+  var prism = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: len, bevelEnabled: false }), hWallM);
+  prism.rotation.y = Math.PI / 2; prism.position.set(x - len / 2, y, z); parent.add(prism);
+  var sm = slateMat(rx || 4, 3);
+  [1, -1].forEach(function (sg) {
+    var slab = mesh(new THREE.BoxGeometry(len + ov * 2, 0.04, L), sm, x, y + h / 2 + Math.cos(a) * 0.02, z + sg * (s / 2) + sg * Math.sin(a) * 0.02);
+    slab.rotation.x = sg * a; parent.add(slab);
+  });
+  parent.add(mesh(new THREE.BoxGeometry(len + ov * 2 + 0.02, 0.035, 0.05), hTrimM, x, y + h + 0.035, z)); // ridge cap
+  return { top: y + h + 0.05, a: a, s: s, L: L };
 }
-
 // ---- main two-storey block ----
 var MW = 0.86, MD = 0.74, MH = 1.0;                  // width along z, depth along x, height
 house.add(mesh(new THREE.BoxGeometry(MD + 0.08, 0.08, MW + 0.08), hBaseM, 0, 0.04, 0));
 house.add(mesh(new THREE.BoxGeometry(MD, MH, MW), hWallM, 0, 0.08 + MH / 2, 0));
 house.add(mesh(new THREE.BoxGeometry(MD + 0.07, 0.05, MW + 0.07), hTrimM, 0, 0.08 + MH, 0));   // cornice
 house.add(mesh(new THREE.BoxGeometry(MD + 0.03, 0.03, MW + 0.03), hTrimM, 0, 0.08 + MH * 0.52, 0)); // floor band
-var top = dome(house, 0, 0.08 + MH + 0.025, 0, 0.36);
-// moon crystal on the tip
-house.add(mesh(new THREE.ConeGeometry(0.035, 0.08, 6), hTrimM, 0, top + 0.03, 0));
-var hCrystal = mesh(new THREE.OctahedronGeometry(0.055, 0), hCrystalM, 0, top + 0.13, 0);
+var RB = 0.08 + MH + 0.025, RH = 0.5, ROV = 0.08;
+var mainRoof = gableRoof(house, 0, RB, 0, MD, MW, RH, ROV, 4);
+var top = mainRoof.top;
+// front gable: silver-fir bargeboards with crossed carved tips at the peak (Nordic), attic round window, carved crescent
+var GX = MD / 2 + ROV + 0.005;
+[1, -1].forEach(function (sg) {
+  var bb = mesh(new THREE.BoxGeometry(0.03, 0.05, mainRoof.L + 0.02), hBeamM, GX, RB + RH / 2 + 0.03, sg * mainRoof.s / 2);
+  bb.rotation.x = sg * mainRoof.a; house.add(bb);
+  var horn = mesh(new THREE.BoxGeometry(0.028, 0.032, 0.2), hBeamM, GX, RB + RH + 0.08, -sg * 0.06);
+  horn.rotation.x = -sg * mainRoof.a; house.add(horn);
+});
+var attic = new THREE.Group(); attic.position.set(MD / 2 + 0.003, RB, 0); attic.rotation.y = Math.PI / 2; house.add(attic);
+attic.add(mesh(new THREE.CircleGeometry(0.085, 18), hTrimM, 0, 0.17, 0));
+attic.add(mesh(new THREE.CircleGeometry(0.065, 18), hWinM, 0, 0.17, 0.004));
+attic.add(mesh(new THREE.BoxGeometry(0.008, 0.13, 0.004), hTrimM, 0, 0.17, 0.008));
+attic.add(mesh(new THREE.BoxGeometry(0.13, 0.008, 0.004), hTrimM, 0, 0.17, 0.008));
+var hMoonCarveM = new THREE.MeshBasicMaterial({ color: lc(0x9fd0ff), transparent: true, opacity: 0.4 });
+var gCrescent = mesh(crescentGeo, hMoonCarveM, 0, 0.34, 0.004); gCrescent.scale.setScalar(0.35); attic.add(gCrescent);
+// silver-fir corner posts on the upper floor
+[[1, 1], [1, -1]].forEach(function (c) { house.add(mesh(new THREE.BoxGeometry(0.04, MH * 0.48, 0.04), hBeamM, c[0] * (MD / 2), 0.08 + MH * 0.76, c[1] * (MW / 2))); });
+// small moon crystal floating just above the front peak
+var hCrystal = mesh(new THREE.OctahedronGeometry(0.04, 0), hCrystalM, GX - 0.02, top + 0.1, 0);
 hCrystal.scale.y = 1.6; house.add(hCrystal);
 // front (+x): wooden door + big window downstairs, window + balcony upstairs
 var FX = MD / 2 + 0.002;
@@ -73,7 +114,7 @@ var WW = 0.56, WD = 0.62, WH = 0.56, WZ = -(MW / 2 + WW / 2 - 0.02);
 house.add(mesh(new THREE.BoxGeometry(WD + 0.08, 0.08, WW + 0.06), hBaseM, -0.04, 0.04, WZ));
 house.add(mesh(new THREE.BoxGeometry(WD, WH, WW), hWallM, -0.04, 0.08 + WH / 2, WZ));
 house.add(mesh(new THREE.BoxGeometry(WD + 0.06, 0.045, WW + 0.06), hTrimM, -0.04, 0.08 + WH, WZ));
-dome(house, -0.04, 0.08 + WH + 0.02, WZ, 0.24);
+gableRoof(house, -0.04, 0.08 + WH + 0.022, WZ, WD, WW, 0.3, 0.06, 3);
 archWindow(house, WD / 2 - 0.04 + 0.002, 0.16, WZ, 0.28, 0.32);
 
 // ---- front steps with faint blue edge lights ----
@@ -89,6 +130,39 @@ hLantern.add(mesh(new THREE.BoxGeometry(0.06, 0.012, 0.012), hIronM, -0.03, 0.05
 hLantern.add(mesh(new THREE.BoxGeometry(0.035, 0.05, 0.035), hWinM, 0, 0, 0));
 hLantern.add(mesh(new THREE.ConeGeometry(0.03, 0.025, 4), hIronM, 0, 0.037, 0));
 var hLight = new THREE.PointLight(lc(0xffb867), 0, 2.2, 2); hLight.position.set(FX + 0.35, 0.55, 0); house.add(hLight);
+
+// ---- blue cloth awning over the door ----
+var awn = new THREE.Group(); awn.position.set(FX, 0.56, 0.2); house.add(awn);
+var awnTop = mesh(new THREE.BoxGeometry(0.2, 0.012, 0.34), hClothM, 0.09, -0.04, 0); awnTop.rotation.z = -0.45; awn.add(awnTop);
+for (var ai = 0; ai < 6; ai++) { // scalloped hem, alternating blue / white
+  var sc = mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.01, 10, 1, false, 0, Math.PI), ai % 2 ? hClothLightM : hClothM, 0.18, -0.085, -0.14 + ai * 0.056);
+  sc.rotation.z = Math.PI / 2; sc.rotation.y = Math.PI / 2; awn.add(sc);
+}
+[-0.16, 0.16].forEach(function (z) { var rod = mesh(new THREE.BoxGeometry(0.2, 0.008, 0.008), hIronM, 0.09, -0.035, z); rod.rotation.z = -0.45; awn.add(rod); });
+
+// ---- wooden bench with a blue cushion under the wing window ----
+var bench = new THREE.Group(); bench.position.set(WD / 2 - 0.04 + 0.1, 0, WZ - 0.02); house.add(bench);
+bench.add(mesh(new THREE.BoxGeometry(0.12, 0.025, 0.34), hWoodM, 0, 0.13, 0));
+bench.add(mesh(new THREE.BoxGeometry(0.1, 0.02, 0.28), hClothM, 0.005, 0.152, 0));
+[-0.14, 0.14].forEach(function (z) { bench.add(mesh(new THREE.BoxGeometry(0.1, 0.12, 0.025), hWoodDarkM, 0, 0.06, z)); });
+
+// ---- little iron stove with a kettle (warm glow at night) ----
+var stove = new THREE.Group(); stove.position.set(0.5, 0, -0.5); house.add(stove);
+var hStoveM = mat(0x4f586e);
+for (var lg = 0; lg < 3; lg++) { var la_ = lg / 3 * Math.PI * 2; stove.add(mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.05, 5), hStoveM, Math.cos(la_) * 0.045, 0.025, Math.sin(la_) * 0.045)); }
+stove.add(mesh(new THREE.CylinderGeometry(0.062, 0.058, 0.13, 14), hStoveM, 0, 0.115, 0));
+stove.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.014, 14), hIronM, 0, 0.187, 0));
+var stoveDoor = mesh(new THREE.CircleGeometry(0.028, 12), hWinM, 0.061, 0.11, 0); stoveDoor.rotation.y = Math.PI / 2; stove.add(stoveDoor);
+var kettle = mesh(new THREE.SphereGeometry(0.035, 12, 8), hTrimM, 0, 0.215, 0); kettle.scale.y = 0.75; stove.add(kettle);
+var spout = mesh(new THREE.CylinderGeometry(0.004, 0.008, 0.04, 5), hTrimM, 0.035, 0.225, 0); spout.rotation.z = -0.9; stove.add(spout);
+var kHandle = mesh(new THREE.TorusGeometry(0.022, 0.004, 4, 10, Math.PI), hIronM, 0, 0.24, 0); stove.add(kHandle);
+var stoveLight = new THREE.PointLight(lc(0xffa85a), 0, 0.9, 2); stoveLight.position.set(0.12, 0.15, 0); stove.add(stoveLight);
+
+// ---- moon-grass pots on both sides of the steps ----
+[[FX + 0.2, -0.0], [FX + 0.2, 0.42]].forEach(function (q, k) {
+  house.add(mesh(new THREE.CylinderGeometry(0.05, 0.038, 0.07, 12), mat(0xe3e8f2), q[0], 0.035, q[1]));
+  var tuft = makeGrassTuft(91 + k * 7, 12, 2); tuft.scale.setScalar(0.22); tuft.position.set(q[0], 0.07, q[1]); house.add(tuft);
+});
 
 // ---- hanging spider plant (吊兰) under the balcony corner + a low rounded-stone garden wall ----
 var hPlantM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, side: THREE.DoubleSide });
@@ -196,9 +270,11 @@ function updateHouse(t, n) {
   hWinM.emissiveIntensity = lerp(0.25, 1.5, n);
   hCrystalM.emissiveIntensity = lerp(0.3, 1.6, n);
   hStepGlowM.opacity = lerp(0.2, 0.85, n);
+  hMoonCarveM.opacity = lerp(0.4, 0.95, n);
+  stoveLight.intensity = n * 0.6;
   hLight.intensity = n * 1.1;
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
-  hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
+  hCrystal.position.y = top + 0.1 + Math.sin(t * 1.3) * 0.012 * MM;
 }
 if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
