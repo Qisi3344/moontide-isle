@@ -64,10 +64,10 @@ function tierShape(T, k) {
 // one vertex-coloured toon material per tier; the top and its rounded bevel take the top colour, the walls a soft
 // light-to-darker gradient, no stripes, no seam between top and rim.
 var TIER_COL = [
-  { top: 0xf1eee8, hi: 0xeee5d4, lo: 0xcfc2aa }, // sand
-  { top: 0xdfe1ea, hi: 0xdfe2ec, lo: 0xb7bccf }, // white stone ledge
-  { top: 0x77b58a, hi: 0xd9dce8, lo: 0xb4b9cc }, // grass terrace, stone wall
-  { top: 0x6aab80, hi: 0xdadde9, lo: 0xb6bbce }  // top terrace, stone wall
+  { top: 0xe8e3d9, hi: 0xe2d9c8, lo: 0xc2b49c }, // sand
+  { top: 0xd8dbe6, hi: 0xd2d8e6, lo: 0xa6b0c9 }, // white stone ledge
+  { top: 0x77b58a, hi: 0xcfd6e5, lo: 0xa3adc6 }, // grass terrace, stone wall
+  { top: 0x6aab80, hi: 0xd0d7e6, lo: 0xa5afc8 }  // top terrace, stone wall
 ];
 // Underwater foundation (2026-10-21: she saw the straight pulled-down walls through the water and wanted it to tuck
 // inward like the underside of a floating-style island). Below the waterline every vertex slides inward along the
