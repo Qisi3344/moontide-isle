@@ -9,7 +9,7 @@ stage.appendChild(renderer.domElement);
 // every sRGB hex goes through lc() so it is linear under sRGB output
 function lc(hex) { return new THREE.Color(hex).convertSRGBToLinear(); }
 var scene = new THREE.Scene();
-scene.fog = new THREE.Fog(lc(0xf4ebd6), 60, 140);
+scene.fog = new THREE.Fog(lc(0xe4edf9), 60, 140);
 var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
 var TARGET = new THREE.Vector3(-0.8, 0.4, 0);
 var controls = new THREE.OrbitControls(camera, renderer.domElement);
