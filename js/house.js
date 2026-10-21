@@ -262,53 +262,56 @@ var windTree = new THREE.Group(), wtSparkM;
     tube(cv, function (t) { return r0 + (r1 - r0) * Math.pow(t, 0.8); }, depth || 0.1, 18, 12);
     return cv;
   }
-  // trunk, laid out from her marked-up picture: rises on the left of the big dome, leans a little left, then bends
-  // over to the right above the dome
-  var trunk = new THREE.CatmullRomCurve3([H(0.72, -0.04), H(0.76, 0.45, 0.02), H(0.72, 0.95, -0.02), H(0.58, 1.42, 0.03), H(0.32, 1.82), H(0.06, 2.02, 0.02)]);
-  var trR = function (t) { return (0.11 + 0.1 * Math.pow(1 - t, 2) + 0.14 * Math.pow(Math.max(0, 1 - t * 6), 2)) * (1 + 0.07 * Math.sin(t * 15 + 0.7)); };
+  // trunk, laid out against her picture: leans in from the left corner and bends over at about dome-top height,
+  // then runs almost level out to the right above both domes (2026-10-21: the upright version looked like a mound)
+  var trunk = new THREE.CatmullRomCurve3([H(0.66, -0.04), H(0.62, 0.45, 0.02), H(0.56, 0.9, -0.02), H(0.42, 1.42, 0.03), H(0.22, 1.8), H(-0.04, 2.02, 0.02), H(-0.3, 2.14)]);
+  var trR = function (t) { return (0.1 + 0.11 * Math.pow(1 - t, 2) + 0.14 * Math.pow(Math.max(0, 1 - t * 6), 2)) * (1 + 0.07 * Math.sin(t * 15 + 0.7)); };
   trR.buttress = true;
-  tube(trunk, trR, 0.16, 48, 30);
+  tube(trunk, trR, 0.16, 54, 30);
   for (var r = 0; r < 6; r++) { // surface roots
     var ra = r / 6 * Math.PI * 2 + 0.6, rl = 0.42 + (r % 3) * 0.1;
     bough([new V(Math.cos(ra) * 0.15, 0.1, Math.sin(ra) * 0.15), new V(Math.cos(ra + 0.2) * rl * 0.6, 0.03, Math.sin(ra + 0.2) * rl * 0.6), new V(Math.cos(ra) * rl, -0.03, Math.sin(ra) * rl)], 0.08, 0.018, 0.08);
   }
   function at(t) { return trunk.getPoint(t); }
-  var top = at(1), tips = { main: [], right: [], left: [] };
-  // continuation of the trunk: main limbs fanning right under the big crown
+  var tips = { main: [], right: [], left: [] };
+  // slender limbs spreading out right under the crown, visible between the leaves like in her picture
   var mains = [
-    [top.clone(), H(-0.2, 2.24, 0.1), H(-0.5, 2.4, 0.05), H(-0.92, 2.5, 0.08), H(-1.2, 2.3, 0.02)],
-    [at(0.93), H(-0.05, 2.35, -0.12), H(-0.25, 2.66, -0.1), H(-0.45, 2.82, -0.05)],
-    [at(0.97), H(-0.25, 2.15, -0.15), H(-0.6, 2.25, -0.2), H(-0.95, 2.3, -0.18)],
-    [at(0.85), H(0.22, 2.18, 0.12), H(0.12, 2.5, 0.15), H(0.05, 2.72, 0.1)]
+    [at(1), H(-0.55, 2.26, 0.05), H(-0.85, 2.36, 0.1), H(-1.2, 2.3, 0.05)],
+    [at(0.96), H(-0.35, 2.36, -0.15), H(-0.6, 2.56, -0.18), H(-0.95, 2.62, -0.12)],
+    [at(0.9), H(-0.05, 2.3, 0.18), H(-0.2, 2.55, 0.25), H(-0.4, 2.72, 0.2)],
+    [at(0.86), H(0.1, 2.2, -0.2), H(0.05, 2.45, -0.28), H(-0.05, 2.62, -0.25)],
+    [at(0.98), H(-0.6, 2.12, -0.05), H(-0.95, 2.1, -0.15), H(-1.25, 2.02, -0.12)]
   ];
   mains.forEach(function (pts, k) {
-    var cv = bough(pts, k === 0 ? 0.1 : 0.075, 0.018, 0.1);
-    [0.45, 0.7, 0.92].forEach(function (u, j) {
-      var s = cv.getPoint(u), e = s.clone().add(new V((j - 1) * 0.12, 0.2 + 0.06 * j, -0.12 - 0.05 * k));
-      bough([s, s.clone().lerp(e, 0.5).add(new V(0.03, 0.04, 0.02)), e], 0.03, 0.008, 0.05); tips.main.push(e, s);
+    var cv = bough(pts, k === 0 ? 0.075 : 0.055, 0.014, 0.1);
+    [0.35, 0.6, 0.85].forEach(function (u, j) {
+      var s = cv.getPoint(u), e = s.clone().add(new V((j - 1) * 0.16 * (k % 2 ? 1 : -1), 0.14 + 0.04 * j, -0.1 - 0.03 * k));
+      bough([s, s.clone().lerp(e, 0.5).add(new V(0.02, 0.03, 0.02)), e], 0.022, 0.006, 0.05); tips.main.push(e, s);
     });
     tips.main.push(pts[pts.length - 1]);
   });
-  // the drooping limb on the right: leaves the main limb, arcs down beside the big dome toward the little dome
-  var dr = bough([H(-0.3, 2.3, 0.1), H(-0.52, 2.18, 0.2), H(-0.66, 1.85, 0.28), H(-0.72, 1.45, 0.3)], 0.055, 0.015, 0.08);
-  [0.35, 0.6, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.12, -0.15)), s.clone().add(new V(-0.05, -0.06, 0.12))); });
-  // the little limb on the left: off the trunk, up and out to the left
-  var lf = bough([at(0.42), H(0.82, 1.32, 0.05), H(0.86, 1.62, 0.08), H(0.8, 1.86, 0.05)], 0.05, 0.012, 0.08);
-  [0.5, 0.8, 1].forEach(function (u) { var s = lf.getPoint(u); tips.left.push(s, s.clone().add(new V(0, 0.04, 0.12))); });
-  // three leaf masses where she boxed them: a broad one up top, a drooping one at the right, a small one at the left
-  var allBlobs = [], R0 = 51;
-  function mass(list, fill, rad, cnt, seed) {
-    var blobs = list.map(function (t) { return [t.x, t.y + 0.03, t.z, rad]; }).concat(fill);
+  // the drooping limb on the right, hanging over the little dome
+  var dr = bough([H(-0.5, 2.24, 0.05), H(-0.72, 2.0, 0.12), H(-0.86, 1.68, 0.16), H(-0.92, 1.42, 0.18)], 0.04, 0.012, 0.08);
+  [0.4, 0.65, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.1, -0.12)), s.clone().add(new V(-0.05, -0.05, 0.1))); });
+  // the little limb on the left, just above the bend
+  var lf = bough([at(0.62), H(0.5, 1.72, 0.05), H(0.58, 1.9, 0.06), H(0.6, 2.05, 0.04)], 0.04, 0.01, 0.08);
+  [0.5, 0.8, 1].forEach(function (u) { var s = lf.getPoint(u); tips.left.push(s, s.clone().add(new V(0, 0.03, 0.1))); });
+  // three leaf masses: a broad, fairly flat band up top, a droop at the right, a small tuft at the left; small fine leaves
+  var allBlobs = [];
+  function mass(list, fill, rad, cnt, seed, sc) {
+    var blobs = list.map(function (t) { return [t.x, t.y + 0.04, t.z, rad]; }).concat(fill);
     var cx = 0, cy = 0, cz = 0; blobs.forEach(function (b) { cx += b[0]; cy += b[1]; cz += b[2]; });
-    windTree.add(leafCards(blobs, [cx / blobs.length, cy / blobs.length - 0.2, cz / blobs.length], 0.62, seed, cnt));
+    windTree.add(leafCards(blobs, [cx / blobs.length, cy / blobs.length - 0.3, cz / blobs.length], sc, seed, cnt));
     allBlobs = allBlobs.concat(blobs);
   }
   var fillMain = [];
-  for (var z = 0.25; z > -1.25; z -= 0.18) fillMain.push([Math.sin(z * 4) * 0.12, 2.62 + Math.cos(z * 2.4) * 0.12 - Math.max(0, -z - 0.9) * 0.4 - O.y, z - O.z, 0.27]);
-  for (z = 0.1; z > -1.1; z -= 0.3) fillMain.push([0.15, 2.85 - O.y, z - O.z, 0.2]);
-  mass(tips.main, fillMain, 0.22, 1150, R0);
-  mass(tips.right, [[0.28, 1.65 - O.y, -0.7 - O.z, 0.24], [0.3, 1.3 - O.y, -0.75 - O.z, 0.2]], 0.17, 420, R0 + 6);
-  mass(tips.left, [[0.06, 1.6 - O.y, 0.86 - O.z, 0.18]], 0.13, 170, R0 + 9);
+  for (var z = 0.2; z > -1.3; z -= 0.14) for (var xx = -0.3; xx <= 0.31; xx += 0.2) {
+    var yy = 2.42 + 0.18 * Math.sin((0.2 - z) / 1.5 * Math.PI) - Math.max(0, -z - 1.0) * 0.5 + Math.sin(z * 7 + xx * 5) * 0.05;
+    fillMain.push([xx + Math.sin(z * 9) * 0.05, yy - O.y, z - O.z, 0.17]);
+  }
+  mass(tips.main, fillMain, 0.15, 2300, 51, 0.42);
+  mass(tips.right, [[0.2, 1.7 - O.y, -0.86 - O.z, 0.16], [0.2, 1.45 - O.y, -0.92 - O.z, 0.13]], 0.12, 480, 57, 0.4);
+  mass(tips.left, [[0.05, 1.92 - O.y, 0.6 - O.z, 0.15]], 0.11, 200, 60, 0.4);
   // blue glints in the leaves and along the trunk (glow at night)
   var sp = [], rs = 77;
   function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
@@ -317,7 +320,7 @@ var windTree = new THREE.Group(), wtSparkM;
   var sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(sp, 3));
   wtSparkM = new THREE.PointsMaterial({ color: lc(0x8fd0ff), size: 0.045, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending });
   windTree.add(new THREE.Points(sg, wtSparkM));
-  windTree.position.copy(O); windTree.scale.setScalar(0.9);
+  windTree.position.copy(O);
 })();
 house.add(windTree);
 
