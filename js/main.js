@@ -40,6 +40,7 @@ renderer.setAnimationLoop(function () {
     applyNight(nightT * nightT * (3 - 2 * nightT));
   }
   controls.update();
+  updateMoon();
   updateSpots(timeU.value, nightU.value);
   updateMagic(dt, timeU.value, nightU.value);
   updateLamps(timeU.value, nightU.value);
