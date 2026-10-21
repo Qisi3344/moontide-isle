@@ -80,8 +80,8 @@ tree.add(mesh(new THREE.CylinderGeometry(0.09, 0.14, 1.2, 7), owlBarkM, 0, 0.6, 
 var branch = mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.72, 6), owlBarkM, 0.44, 0.72, 0);
 branch.rotation.z = -Math.PI / 2 + 0.08; tree.add(branch);
 var owlBlobs = [[0, 1.5, 0, 0.52], [0.32, 1.32, 0.15, 0.38], [-0.3, 1.3, -0.12, 0.4], [0.1, 1.38, -0.34, 0.32], [-0.12, 1.78, 0.06, 0.3]];
-owlBlobs.forEach(function (b, k) { tree.add(canopyBlob(b, b[3] * 0.9, [0, 1.45, 0], moonLeafM[k % 3])); });
-tree.add(leafCards(owlBlobs, [0, 1.45, 0], 1, 11, 90));
+tree.add(leafCards(owlBlobs, [0, 1.45, 0], 1, 11, 280));
+tree.add(mesh(new THREE.SphereGeometry(0.62, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }), 0, 1.45, 0)); // invisible tap target for the canopy
 var hole = mesh(new THREE.CircleGeometry(0.05, 8), new THREE.MeshBasicMaterial({ color: lc(0x3a3f55) }), 0, 0.45, 0.126);
 hole.scale.y = 1.3; tree.add(hole);
 var lantern = new THREE.Group(), lanternM = glowMat(0xf2b35e);
