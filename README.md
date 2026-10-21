@@ -58,7 +58,7 @@ js/main.js          尺寸、提示、动画循环、对外接口
 
 ## 许可
 
-版权所有（All Rights Reserved）：禁止商用，禁止二改，禁止复制、拿走本项目的源代码与素材，仅供浏览。vendor/ 里的 three.js 按其 MIT 许可。
+CC BY-NC-ND 4.0：欢迎署名分享，不支持二改，不支持商用。vendor/ 里的 three.js 按其 MIT 许可。
 
 ---
 
