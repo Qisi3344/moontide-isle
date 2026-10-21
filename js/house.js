@@ -232,7 +232,8 @@ clearing.visible = false; ring.visible = false;   // the patio replaces the old 
 var windTree = new THREE.Group(), wtSparkM;
 (function () {
   var V = THREE.Vector3, O = new V(-0.7, 0.02, 0.72); // tree origin in house space
-  function H(z, y, x) { return new V((x || 0), y - O.y, z - O.z); } // author points in house space (z: + left, - right as seen from the bay)
+  var SY = 0.85, SZ = 1.15; // 2026-10-21 her edit: whole tree lower and flatter, stretched out to the right
+  function H(z, y, x) { return new V((x || 0), y * SY - O.y, (z - O.z) * SZ); } // author points in house space (z: + left, - right as seen from the bay)
   var cRidge = new THREE.Color(lc(0xeef1f8)), cGroove = new THREE.Color(lc(0x8f9bb5)), barkM = toonMat(0xffffff);
   barkM.vertexColors = true; barkM.side = THREE.DoubleSide;
   // one seamless tapered tube along a smooth curve, with spiralling bark furrows (2026-10-21: chains of cylinders
@@ -291,8 +292,8 @@ var windTree = new THREE.Group(), wtSparkM;
     tips.main.push(pts[pts.length - 1]);
   });
   // the drooping limb on the right, hanging over the little dome
-  var dr = bough([H(-0.5, 2.24, 0.05), H(-0.72, 2.0, 0.12), H(-0.86, 1.68, 0.16), H(-0.92, 1.42, 0.18)], 0.04, 0.012, 0.08);
-  [0.4, 0.65, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.1, -0.12)), s.clone().add(new V(-0.05, -0.05, 0.1))); });
+  var dr = bough([H(-0.5, 2.24, 0.05), H(-0.75, 2.04, 0.12), H(-1.02, 1.95, 0.16), H(-1.32, 1.98, 0.18)], 0.04, 0.012, 0.08); // a low wisp streaming right
+  [0.4, 0.65, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.03, -0.14)), s.clone().add(new V(-0.05, 0.02, 0.1))); });
   // the little limb on the left, just above the bend
   var lf = bough([at(0.62), H(0.5, 1.72, 0.05), H(0.58, 1.9, 0.06), H(0.6, 2.05, 0.04)], 0.04, 0.01, 0.08);
   [0.5, 0.8, 1].forEach(function (u) { var s = lf.getPoint(u); tips.left.push(s, s.clone().add(new V(0, 0.03, 0.1))); });
@@ -307,11 +308,12 @@ var windTree = new THREE.Group(), wtSparkM;
   var fillMain = [];
   for (var z = 0.2; z > -1.3; z -= 0.14) for (var xx = -0.3; xx <= 0.31; xx += 0.2) {
     var yy = 2.42 + 0.18 * Math.sin((0.2 - z) / 1.5 * Math.PI) - Math.max(0, -z - 1.0) * 0.5 + Math.sin(z * 7 + xx * 5) * 0.05;
-    fillMain.push([xx + Math.sin(z * 9) * 0.05, yy - O.y, z - O.z, 0.17]);
+    fillMain.push([xx + Math.sin(z * 9) * 0.05, yy * SY - O.y, (z - O.z) * SZ, 0.17]);
   }
   mass(tips.main, fillMain, 0.15, 2300, 51, 0.42);
-  mass(tips.right, [[0.2, 1.7 - O.y, -0.86 - O.z, 0.16], [0.2, 1.45 - O.y, -0.92 - O.z, 0.13]], 0.12, 480, 57, 0.4);
-  mass(tips.left, [[0.05, 1.92 - O.y, 0.6 - O.z, 0.15]], 0.11, 200, 60, 0.4);
+  var wisp = []; [-0.85, -0.98, -1.1, -1.22, -1.34].forEach(function (z, i) { wisp.push([0.18, (1.98 - i * 0.01) * SY - O.y, (z - O.z) * SZ, 0.13 - i * 0.012]); });
+  mass(tips.right, wisp, 0.11, 480, 57, 0.4);
+  mass(tips.left, [[0.05, 1.92 * SY - O.y, (0.55 - O.z) * SZ, 0.13]], 0.1, 170, 60, 0.4);
   // blue glints in the leaves and along the trunk (glow at night)
   var sp = [], rs = 77;
   function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
