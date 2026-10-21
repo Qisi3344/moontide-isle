@@ -19,57 +19,43 @@ function dotMat(hex, size) {
 function rnd(a, b) { return a + Math.random() * (b - a); }
 
 // ---- floating rock islets ----
-var fCapM = toonMat(0xffffff); fCapM.vertexColors = true; fCapM.side = THREE.DoubleSide;
 function fNoise(x, z, k) { return Math.sin(x * 7.3 + k) * Math.cos(z * 6.1 - k * 0.7) + 0.6 * Math.sin((x + z) * 13.7 + k * 2.1) + 0.35 * Math.sin(x * 23.1 - z * 19.3 + k); }
-function floatRockGeo(s, k) {
-  var g = new THREE.IcosahedronGeometry(s, 2), p = g.attributes.position, col = [], c = new THREE.Color();
-  var cT = lc(0xdfe4ee), cM = lc(0xb7c3d9), cB = lc(0x8d9dc0);
-  for (var i = 0; i < p.count; i++) {
+// 2026-10-21 v3: one closed mesh per rock (no separate lid = no seams/holes). Like the slope-blend ground in
+// stylized three.js scenes (dedekpo/stylized-scene, Sky Isles): faces pointing up get soft mint/aqua grass with
+// gentle per-patch variation, a frosty band where grass meets stone, stone below. grassy=false leaves bare stone.
+function floatRockGeo(s, k, grassy) {
+  var g = new THREE.IcosahedronGeometry(s, 3), p = g.attributes.position, i;
+  for (i = 0; i < p.count; i++) {
     var x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    if (y > 0) y *= 0.3;
+    if (y > 0) y *= 0.28;
     else {
-      // noise fades in below the rim so the body never pokes out past the grass cap (2026-10-21 fix: jagged holes)
       var w = THREE.MathUtils.smoothstep(-y / s, 0.05, 0.4);
-      var j = 1 + 0.16 * w * Math.sin(x * 8.1 / s + z * 5.3 / s + k) * Math.cos(y * 6.7 / s + k) - 0.04 * (1 - w);
+      var j = 1 + 0.16 * w * Math.sin(x * 8.1 / s + z * 5.3 / s + k) * Math.cos(y * 6.7 / s + k);
       var tp = 1 + 0.45 * y / s; x *= j * tp; z *= j * tp; y *= 1.55 * j;
     }
     p.setXYZ(i, x, y, z);
-    var t = (y / s + 1.55) / 1.85;
+  }
+  smoothWalls(g);
+  var nor = g.attributes.normal, col = [], c = new THREE.Color(), gc = new THREE.Color();
+  var cT = lc(0xe1e6ef), cM = lc(0xbcc7dc), cB = lc(0x93a3c4);
+  var gD = lc(0x9fcfc0), gM = lc(0xb3d8c8), gL = lc(0xb4dcd9), fr = lc(0xe6f3ef);
+  for (i = 0; i < p.count; i++) {
+    var yy = p.getY(i), t = (yy / s + 1.55) / 1.83;
     if (t > 0.7) c.copy(cM).lerp(cT, (t - 0.7) / 0.3); else c.copy(cB).lerp(cM, Math.max(0, t) / 0.7);
+    if (grassy) {
+      var xx = p.getX(i) / s, zz = p.getZ(i) / s;
+      var edge = 0.55 + 0.08 * Math.sin(Math.atan2(zz, xx) * 5 + k); // wavy grass line
+      var m = THREE.MathUtils.smoothstep(nor.getY(i), edge - 0.04, edge + 0.04);
+      var v = Math.sin(xx * 5.1 + k) * Math.cos(zz * 4.3 - k) + 0.5 * Math.sin((xx - zz) * 9.7 + k);
+      gc.copy(gL).lerp(gM, THREE.MathUtils.clamp(v * 0.5 + 0.5, 0, 1));
+      if (v > 0.8) gc.lerp(gD, 0.5);
+      var band = THREE.MathUtils.smoothstep(nor.getY(i), edge - 0.04, edge + 0.12);
+      gc.lerp(fr, (1 - band) * 0.7);
+      c.lerp(gc, m);
+    }
     col.push(c.r, c.g, c.b);
   }
   g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  smoothWalls(g);
-  return g;
-}
-function floatCapGeo(s, k) {
-  var RINGS = 6, SEG = 28, pos = [], col = [], idx = [], c = new THREE.Color();
-  var gD = lc(0x7eaec2), gM = lc(0x94bfcc), gL = lc(0xb2d4dc), bare = lc(0xe8f1f6), gEdge = lc(0xc9e0ea); // softer mottling, frosty rim // matches the island's moon-grass
-  pos.push(0, 0.3 * s + 0.012 * s, 0); col.push(gM.r, gM.g, gM.b);
-  for (var r = 1; r <= RINGS + 1; r++) {
-    for (var a = 0; a < SEG; a++) {
-      var th = a / SEG * Math.PI * 2, cx = Math.cos(th), cz = Math.sin(th), x, y, z;
-      if (r <= RINGS) {
-        var f = r / RINGS * 0.99; x = cx * f * s; z = cz * f * s;
-        y = 0.3 * s * Math.sqrt(Math.max(0, 1 - f * f)) + 0.012 * s;
-        var n = fNoise(x / s, z / s, k);
-        if (n < -1.05 && r < RINGS) c.copy(bare); else if (n < -0.2) c.copy(gL).lerp(gM, (n + 1.05) / 0.85); else if (n < 0.7) c.copy(gM).lerp(gD, (n + 0.2) / 0.9); else c.copy(gD);
-      } else { // fringe dripping over the rim, jagged lengths
-        var drip = 0.04 + 0.04 * (0.5 + 0.5 * Math.sin(a * 2.7 + k));
-        x = cx * s * 1.01; z = cz * s * 1.01; y = -drip * s; c.copy(gEdge);
-      }
-      pos.push(x, y, z); col.push(c.r, c.g, c.b);
-    }
-  }
-  for (a = 0; a < SEG; a++) idx.push(0, 1 + (a + 1) % SEG, 1 + a);
-  for (r = 1; r <= RINGS; r++) for (a = 0; a < SEG; a++) {
-    var i0 = 1 + (r - 1) * SEG + a, i1 = 1 + (r - 1) * SEG + (a + 1) % SEG, j0 = i0 + SEG, j1 = i1 + SEG;
-    idx.push(i0, i1, j0, i1, j1, j0);
-  }
-  var g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  g.setIndex(idx); g.computeVertexNormals();
   return g;
 }
 var fRocks = [];
@@ -78,15 +64,15 @@ var fRocks = [];
   // 2026-10-21 redo: was a faceted dark-blue shard with a flat green lid. Now a smooth stone body (moon-white top
   // fading to soft blue-grey, tapering down) wearing a patchy grass cap: dense/mid/light greens with a few bare
   // pale-stone spots, and a jagged grass fringe dripping over the rim.
-  g.add(new THREE.Mesh(floatRockGeo(s, i), rockVM));
-  g.add(new THREE.Mesh(floatCapGeo(s, i), fCapM));
-  var topY = function (r) { return 0.3 * s * Math.sqrt(Math.max(0, 1 - r * r)) + 0.012 * s; };
-  var tf = makeGrassTuft(i + 21, 20, 3); tf.scale.setScalar(s * 0.7); tf.position.set(s * 0.35, topY(0.36), -s * 0.2); g.add(tf);
+  var grassy = i < 2; // two grassy islets (one with the moon tree), two bare stone ones
+  g.add(new THREE.Mesh(floatRockGeo(s, i, grassy), rockVM));
+  var topY = function (r) { return 0.3 * s * Math.sqrt(Math.max(0, 1 - r * r)) - 0.01 * s; };
+  if (grassy) { var tf = makeGrassTuft(i + 21, 20, 3); tf.scale.setScalar(s * 0.7); tf.position.set(s * 0.35, topY(0.36), -s * 0.2); g.add(tf); }
   for (var pb = 0; pb < 2; pb++) {
     var pr = 0.5 + pb * 0.15, pa = i * 2.1 + pb * 2.6, st = new THREE.Mesh(rockGeo(s * (0.09 - pb * 0.025), i * 3 + pb, 0.6), rockVM);
     st.position.set(Math.cos(pa) * pr * s, topY(pr) - 0.01, Math.sin(pa) * pr * s); g.add(st);
   }
-  if (i !== 1) { // two little mushrooms, pink + blue
+  if (i === 0) { // two little mushrooms, pink + blue
     for (var mi = 0; mi < 2; mi++) {
       var ma = i * 1.3 + mi * 0.5 + 3, mr = 0.55, ms = mi ? 0.55 : 0.8, mh = 0.07 * ms + 0.02, mg = new THREE.Group();
       mg.position.set(Math.cos(ma) * mr * s, topY(mr) - 0.005, Math.sin(ma) * mr * s);
