@@ -110,13 +110,78 @@ function blossom(x, z, sc, seed) {
   g.scale.setScalar(sc); g.position.set(x, height(x, z) - 0.03, z); g.rotation.y = x * 2.3;
   props.add(g); return g;
 }
-function bush(x, z, sc) {
-  var g = new THREE.Group();
-  [[0, 0.22, 0, 0.32], [0.26, 0.15, 0.08, 0.22], [-0.2, 0.14, -0.12, 0.2]].forEach(function (b, k) {
-    var m = new THREE.Mesh(new THREE.IcosahedronGeometry(b[3], 1), bushM[k % 2]);
-    m.position.set(b[0], b[1], b[2]); g.add(m);
-  });
-  g.scale.setScalar(sc); g.position.set(x, height(x, z) - 0.05, z); g.rotation.y = x * 3;
+// moon grass tuft: long curved blue-white blades + a few glowing star flowers (replaces the old green bush balls).
+// Blades are tapered curved strips merged into one mesh; the tips sway in the vertex shader (grass trick from
+// stylized three.js grass demos: bend weight = height along the blade, stored in uv.y).
+var grassTimeU = { value: 0 };
+var grassBladeM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, side: THREE.DoubleSide });
+grassBladeM.emissive = lc(0x9cc8ff); grassBladeM.emissiveIntensity = 0;
+grassBladeM.onBeforeCompile = function (sh) {
+  sh.uniforms.uTime = grassTimeU;
+  sh.vertexShader = "uniform float uTime;\n" + sh.vertexShader.replace("#include <begin_vertex>",
+    "vec3 transformed = vec3( position );\n" +
+    "float bend = uv.y * uv.y;\n" +
+    "transformed.x += sin( uTime * 1.6 + position.x * 2.7 + position.z * 1.9 ) * 0.05 * bend;\n" +
+    "transformed.z += sin( uTime * 1.2 + position.z * 3.3 ) * 0.035 * bend;");
+};
+var grassFlowerM = new THREE.MeshToonMaterial({ color: lc(0xf4f9ff), gradientMap: toonGrad, side: THREE.DoubleSide });
+grassFlowerM.emissive = lc(0xbfe0ff); grassFlowerM.emissiveIntensity = 0.15;
+var moonGrassM = [grassBladeM, grassFlowerM];
+var starFlowerG = (function () {
+  var sh = new THREE.Shape();
+  for (var i = 0; i <= 10; i++) {
+    var a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.024 : 0.06;
+    if (i) sh.lineTo(Math.cos(a) * r, Math.sin(a) * r); else sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return new THREE.ShapeGeometry(sh);
+})();
+function makeGrassTuft(seed, blades, flowers) {
+  var rs = (seed || 1) * 7919 + 13;
+  function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+  var pos = [], nor = [], uv = [], col = [], idx = [], SEG = 4;
+  var cBase = lc(0x5f86c0), cMid = lc(0xa9c8ee), cTip = lc(0xf3f8ff), tmp = new THREE.Color();
+  var g = new THREE.Group(), N = blades || 30;
+  for (var k = 0; k < N; k++) {
+    var ang = R() * Math.PI * 2, rad = Math.sqrt(R()) * 0.28;
+    var bx = Math.cos(ang) * rad, bz = Math.sin(ang) * rad;
+    var h = 0.32 + R() * 0.32 * (1 - rad * 1.6), lean = 0.12 + R() * 0.22 + rad * 0.5;
+    var la = ang + (R() - 0.5) * 0.9, lx = Math.cos(la), lz = Math.sin(la);
+    var sa = la + Math.PI / 2 + (R() - 0.5) * 0.8, sx = Math.cos(sa), sz = Math.sin(sa), w0 = 0.022 + R() * 0.014;
+    var base = pos.length / 3;
+    for (var j = 0; j <= SEG; j++) {
+      var t = j / SEG, w = w0 * (1 - t * 0.92), off = lean * t * t;
+      var cx = bx + lx * off, cy = h * t * (1 - 0.18 * t * lean), cz = bz + lz * off;
+      if (t < 0.5) tmp.copy(cBase).lerp(cMid, t * 2); else tmp.copy(cMid).lerp(cTip, (t - 0.5) * 2);
+      var nx = lx * 0.45, nz = lz * 0.45, nl = Math.sqrt(nx * nx + 1 + nz * nz);
+      [-1, 1].forEach(function (sd) {
+        pos.push(cx + sx * w * sd, cy, cz + sz * w * sd); nor.push(nx / nl, 1 / nl, nz / nl);
+        uv.push(sd < 0 ? 0 : 1, t); col.push(tmp.r, tmp.g, tmp.b);
+      });
+      if (j < SEG) { var q = base + j * 2; idx.push(q, q + 1, q + 3, q, q + 3, q + 2); }
+    }
+  }
+  var bg = new THREE.BufferGeometry();
+  bg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  bg.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  bg.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  bg.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  bg.setIndex(idx);
+  g.add(new THREE.Mesh(bg, grassBladeM));
+  var F = flowers === undefined ? 4 : flowers;
+  for (var f = 0; f < F; f++) { // glowing star flowers on thin stems
+    var fa = R() * Math.PI * 2, fr = Math.sqrt(R()) * 0.22, fh = 0.22 + R() * 0.3;
+    var fx = Math.cos(fa) * fr, fz = Math.sin(fa) * fr;
+    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.007, fh, 4), grassBladeM);
+    stem.position.set(fx, fh / 2, fz); g.add(stem);
+    var fl = new THREE.Mesh(starFlowerG, grassFlowerM);
+    fl.position.set(fx, fh + 0.005, fz); fl.rotation.set(-Math.PI / 2 + (R() - 0.5) * 0.9, 0, R() * 6.3);
+    fl.scale.setScalar(0.8 + R() * 0.5); g.add(fl);
+  }
+  return g;
+}
+function bush(x, z, sc, seed) {
+  var g = makeGrassTuft(seed || Math.round(Math.abs(x * 37 + z * 11)) + 1, 34, 4);
+  g.scale.setScalar(sc * 1.15); g.position.set(x, height(x, z) - 0.02, z); g.rotation.y = x * 3;
   props.add(g);
 }
 function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos(a) * r, -Math.sin(a) * r]; }
@@ -135,7 +200,8 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
   var m = new THREE.Mesh(sg, stackM); m.scale.set(1, 1.5 + (k % 3) * 0.3, 0.9);
   m.position.set(q[0], -0.25 + d[2] * 0.4, q[1]); m.rotation.y = k * 1.3; props.add(m);
 });
-[[120, 3.5, 1], [238, 3.5, 0.9], [80, 3.7, 0.75], [225, 3.3, 0.7], [285, 3.75, 0.7]].forEach(function (d) {
+[[120, 3.5, 1], [238, 3.5, 0.9], [80, 3.7, 0.75], [225, 3.3, 0.7], [285, 3.75, 0.7],
+ [98, 4.3, 0.7], [132, 3.85, 0.65], [150, 4.45, 0.75], [200, 4.5, 0.7], [212, 4.4, 0.6], [250, 4.15, 0.75], [270, 3.6, 0.6]].forEach(function (d, k) {
   var q = polar(d[0], d[1]);
-  if (inside(q[0], q[1]) > 0.3) bush(q[0], q[1], d[2]);
+  if (inside(q[0], q[1]) > 0.3) bush(q[0], q[1], d[2], k + 1);
 });
