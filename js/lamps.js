@@ -2,22 +2,43 @@
 "use strict";
 // ---------- moon lamps + pier ----------
 var lampsG = new THREE.Group(); scene.add(lampsG);
-var lampStoneM = mat(0xe9ebf1), lampPostM = mat(0xd5d8e3);
-var moonGlowM = mat(0xfff4cf); moonGlowM.emissive = lc(0xffe9a8); moonGlowM.emissiveIntensity = 0.25;
+var lampStoneM = mat(0xe8eaf1), lampTrimM = mat(0xd6d9e4);
+var moonGlowM = mat(0xf3f8ff); moonGlowM.emissive = lc(0xd6ecff); moonGlowM.emissiveIntensity = 0.35;
+var runeM = new THREE.MeshBasicMaterial({ color: lc(0x9fdcff), transparent: true, opacity: 0.35 });
+var lampHaloM = new THREE.MeshBasicMaterial({ map: dotTex, color: lc(0xa8dcff), transparent: true, opacity: 0,
+  depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
 var plankM = [mat(0xeae0cc), mat(0xe1d5bd)], pierPostM = mat(0xa9a3a8);
+// a crescent shape with pointed horns (outer circle arc + squashed inner arc), horns pointing up
+var crescentGeo = (function () {
+  var sh = new THREE.Shape(), R = 0.12, N = 24, i, t;
+  for (i = 0; i <= N; i++) { t = -Math.PI / 2 + Math.PI * i / N; sh[i ? "lineTo" : "moveTo"](R * Math.cos(t), R * Math.sin(t)); }
+  for (i = N - 1; i > 0; i--) { t = -Math.PI / 2 + Math.PI * i / N; sh.lineTo(R * 0.32 * Math.cos(t), R * Math.sin(t)); }
+  var g = new THREE.ExtrudeGeometry(sh, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2, curveSegments: 4 });
+  g.translate(-R * 0.3, 0, -0.011); g.rotateZ(-Math.PI / 2);
+  return g;
+})();
+var lampMoons = [], tmpQ = new THREE.Quaternion();
 
+// a square white-stone pillar with a little crescent moon floating above it
 function moonLamp(x, z, ry, y) {
   var g = new THREE.Group();
-  g.add(mesh(new THREE.CylinderGeometry(0.075, 0.095, 0.07, 8), lampStoneM, 0, 0.035, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.024, 0.034, 0.56, 8), lampPostM, 0, 0.35, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.045, 0.03, 0.03, 8), lampStoneM, 0, 0.64, 0));
-  // the little crescent moon on top
-  var moon = mesh(new THREE.TorusGeometry(0.075, 0.022, 8, 20, Math.PI * 1.25), moonGlowM, 0, 0.75, 0);
-  moon.rotation.z = Math.PI * 0.12 - 0.6;
+  g.add(mesh(new THREE.BoxGeometry(0.2, 0.05, 0.2), lampTrimM, 0, 0.025, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), lampStoneM, 0, 0.075, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.1, 0.56, 0.1), lampStoneM, 0, 0.38, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.15, 0.035, 0.15), lampTrimM, 0, 0.675, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.12, 0.03, 0.12), lampStoneM, 0, 0.705, 0));
+  // faint glowing rune stripe + tiny crescent carving on the front face
+  g.add(mesh(new THREE.BoxGeometry(0.012, 0.22, 0.004), runeM, 0, 0.3, 0.051));
+  var carve = mesh(crescentGeo, runeM, 0, 0.5, 0.052); carve.scale.setScalar(0.22); g.add(carve);
+  // the floating moon
+  var moon = mesh(crescentGeo, moonGlowM, 0, 0.9, 0);
   g.add(moon);
+  var halo = mesh(new THREE.PlaneGeometry(0.55, 0.55), lampHaloM, 0, 0.9, 0); g.add(halo);
+  var ring = mesh(new THREE.PlaneGeometry(0.6, 0.6), lampHaloM, 0, 0.012, 0); ring.rotation.x = -Math.PI / 2; g.add(ring);
   g.position.set(x, y === undefined ? height(x, z) - 0.01 : y, z);
   g.rotation.y = ry || 0;
   lampsG.add(g);
+  lampMoons.push({ moon: moon, halo: halo, ph: lampMoons.length * 1.3 });
   return g;
 }
 
@@ -59,7 +80,16 @@ var clearLight = new THREE.PointLight(lc(0xffe2a0), 0, 2.6, 2); clearLight.posit
 });
 
 function updateLamps(t, n) {
-  moonGlowM.emissiveIntensity = lerp(0.25, 1.7, n);
+  moonGlowM.emissiveIntensity = lerp(0.35, 1.9, n);
+  runeM.opacity = lerp(0.35, 0.95, n);
+  lampHaloM.opacity = n * 0.55;
+  lampMoons.forEach(function (m) {
+    m.moon.position.y = 0.9 + Math.sin(t * 1.1 + m.ph) * 0.025 * MM;
+    m.moon.rotation.y = t * 0.4 * MM + m.ph;
+    m.halo.position.y = m.moon.position.y;
+    m.halo.quaternion.copy(camera.quaternion);
+    m.halo.parent.getWorldQuaternion(tmpQ); m.halo.quaternion.premultiply(tmpQ.invert());
+  });
   pierLight.intensity = n * 0.9;
   clearLight.intensity = n * 0.9;
 }
