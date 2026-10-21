@@ -10,7 +10,7 @@ var lampHaloM = new THREE.MeshBasicMaterial({ map: dotTex, color: lc(0xa8dcff), 
 var plankM = [mat(0xeae0cc), mat(0xe1d5bd)], pierPostM = mat(0xa9a3a8);
 // a thin ring-like crescent (outer circle minus a slightly smaller circle shifted up), horns pointing up
 var crescentGeo = (function () {
-  var R = 0.12, r = 0.108, e = 0.022, N = 40, i, t;
+  var R = 0.12, r = 0.098, e = 0.03, N = 40, i, t;
   var hy = (R * R - r * r + e * e) / (2 * e), hx = Math.sqrt(R * R - hy * hy); // horn tips
   var aO = Math.atan2(hy, hx), aI = Math.atan2(hy - e, hx);
   var sh = new THREE.Shape();
