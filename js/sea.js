@@ -39,7 +39,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   ].join("\n"),
   fragmentShader: [
     "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep; varying vec3 vW; varying vec3 vN;",
-    "float inside(vec2 p){ return min(5.3-length(p),length(p-vec2(2.4,0.))-2.7); }", // lagoon shore follows the wider beach
+    "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
     "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
     " float s=max(0.,-inside(vW.xz)-0.12);",
     " float lag=(1.-smoothstep(2.4,3.6,length(vW.xz-vec2(2.4,0.))))*(1.-smoothstep(4.4,5.6,length(vW.xz))); float sd=s*(1.-0.25*lag);",
@@ -50,7 +50,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " float fr=pow(1.-max(dot(n,v),0.),3.);",
     " c+=fr*mix(0.15,0.3,uNight)*mix(uSky,vec3(0.5,0.65,1.),uNight);",
     " float wob=sin(atan(vW.z,vW.x)*14.+uTime*1.4)*0.08;",
-    " float foam=1.-smoothstep(0.12,0.45+wob,s);",
+    " float foam=1.-smoothstep(0.3,1.0+wob,s); // wider pale-sand shallows band around the island, both sea side and lagoon (2026-10-21)",
     " c=mix(c,vec3(1.,0.99,0.95)*mix(1.,0.55,uNight),foam*0.5);",
     " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
     " c+=vec3(1.)*sp*mix(1.,0.7,uNight);",
