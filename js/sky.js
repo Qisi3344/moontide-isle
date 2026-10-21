@@ -32,41 +32,12 @@ var MOON_EL = THREE.MathUtils.degToRad(9), MOON_LIGHT_EL = THREE.MathUtils.degTo
 var MOON_SKY = new THREE.Vector3(Math.sin(MOON_AZ) * Math.cos(MOON_EL), Math.sin(MOON_EL), Math.cos(MOON_AZ) * Math.cos(MOON_EL));
 var MOON_DIR = new THREE.Vector3(Math.sin(MOON_AZ) * Math.cos(MOON_LIGHT_EL), Math.sin(MOON_LIGHT_EL), Math.cos(MOON_AZ) * Math.cos(MOON_LIGHT_EL));
 var SUN_DIR = new THREE.Vector3(0.65, 0.6, 0.45).normalize();
-// The moon (she asked for one with a soft glow, 2026-10-21). It hangs in a fixed spot in the sky like a skybox:
-// re-centred on the camera every frame (no parallax, never drifts with the view), a little above the horizon,
-// on bearing MOON_AZ. The night light (MOON_DIR) comes from that same bearing, higher up, so the island is lit
-// and the sea glints from the moon's side. Pale moon-white + blue halo, no purple. Faint by day, glowing at night.
-var moonU = { uNight: nightU, uTime: timeU };
-var moon = new THREE.Mesh(new THREE.PlaneGeometry(72, 72), new THREE.ShaderMaterial({
-  uniforms: moonU, transparent: true, depthWrite: false, fog: false,
-  vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
-  fragmentShader: [
-    "uniform float uNight,uTime; varying vec2 vUv;",
-    "float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }",
-    "float n(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.),f.x),f.y); }",
-    "void main(){ vec2 p=vUv-.5; float d=length(p), R=.115;",
-    "  float disc=smoothstep(R,R-.006,d);",
-    "  float mare=n(p*26.+3.)*.6+n(p*55.)*.4; mare=smoothstep(.5,.75,mare);",
-    "  float rim=smoothstep(R*.55,R,d);",
-    "  vec3 c=mix(vec3(1.,.99,.95),vec3(.82,.88,.98),mare*.55+rim*.25);",
-    "  float pulse=1.+.06*sin(uTime*.8);",
-    "  float glow=(exp(-(d-R)*14.)*.55+exp(-(d-R)*5.)*.25)*step(R-.006,d)*pulse;",
-    "  float k=mix(.32,1.,uNight);",
-    "  vec3 gc=mix(vec3(.85,.92,1.),vec3(.72,.85,1.),clamp((d-R)*3.,0.,1.));",
-    "  vec3 col=mix(gc,c,disc); float a=(disc+glow*(1.-disc))*k*smoothstep(.5,.4,d);",
-    "  gl_FragColor=vec4(col,a);",
-    "#include <encodings_fragment>",
-    "}"].join("\n")
-}));
-moon.renderOrder = 999; // drawn last: depth-tested against the island, over the far sea
-scene.add(moon);
-function placeMoon() { // called from fit(): a touch smaller on narrow phone screens
-  moon.scale.setScalar(Math.min(1, camera.aspect * 0.75 + 0.3));
-}
-function updateMoon() { // every frame: same sky direction, centred on the camera
-  moon.position.copy(camera.position).addScaledVector(MOON_SKY, 250);
-  moon.lookAt(camera.position);
-}
+// No moon mesh for now (2026-10-21): she asked for one, then had it taken off because its glare left a white blob
+// on the sea. Next try should follow the open-source pattern (e.g. Nugget8/Three.js-Ocean-Scene, christianpasinrey/drift):
+// draw the moon inside the sky-dome shader from a direction, and let the sea reflect that same sky function as a
+// thin glitter path instead of a broad specular lobe. placeMoon/updateMoon kept as no-ops so main.js stays simple.
+function placeMoon() {}
+function updateMoon() {}
 
 // ---------- lights ----------
 var hemi = new THREE.HemisphereLight(DAY.hemi.clone(), DAY.ground.clone(), 0.45);
