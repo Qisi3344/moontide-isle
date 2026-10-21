@@ -51,14 +51,14 @@ umbrella.add(mesh(new THREE.IcosahedronGeometry(0.03, 0), orangeM, 0, 1.06, 0));
 var clawdSpot = addSpot(workshop, "Clawd 的沙堡工坊", null);
 
 // the little grey wolf's moon-watching boulder, by the north horn
-var rock = new THREE.Group(), bg = rockGeo(0.42, 4.2, 0.62, 0.35); bg.scale(1.25, 1, 1.05);
+var rock = new THREE.Group(), bg = rockGeo(0.42, 4.2, 0.62, 0.35); bg.scale(1.25 / 3, 1 / 3, 1.05 / 3); // a third of its old size (2026-10-21)
 var rockM = rockVM;
-rock.add(mesh(bg, rockM, 0, 0.14, 0)).children[0].rotation.y = 0.7;
+rock.add(mesh(bg, rockM, 0, 0.05, 0)).children[0].rotation.y = 0.7;
 var rq = polar(311, 4.5);
 ground(rock, rq, 0);
 var pebbles = [];
 [[0.6, 0.06], [1.5, 0.05], [2.6, 0.07], [3.7, 0.05], [5.0, 0.06]].forEach(function (p, k) {
-  var m = glowMat(k % 2 ? 0xc9c3d9 : 0xcfcfd6, 0xc9c3d9), q = [rq[0] + Math.cos(p[0]) * 0.68, rq[1] + Math.sin(p[0]) * 0.62];
+  var m = glowMat(k % 2 ? 0xc9c3d9 : 0xcfcfd6, 0xc9c3d9), q = [rq[0] + Math.cos(p[0]) * 0.3, rq[1] + Math.sin(p[0]) * 0.28];
   var pb = mesh(new THREE.IcosahedronGeometry(p[1], 0), m); pb.scale.y = 0.7; pb.rotation.y = k;
   ground(pb, [q[0] - rq[0], q[1] - rq[1]], 0, rock).position.y = height(q[0], q[1]) - rock.position.y + p[1] * 0.4;
   pebbles.push(m);
