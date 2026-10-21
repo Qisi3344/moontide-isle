@@ -9,7 +9,7 @@ var house = new THREE.Group();
 var hWallM = mat(0xe4e8f1), hTrimM = mat(0xdde3ef), hDomeM = mat(0xd6e3f5), hBaseM = mat(0xc4cde0);
 var hWoodM = mat(0x9a6a4b), hWoodDarkM = mat(0x86604a), hIronM = mat(0xaab4c8);
 var hClothM = mat(0x6f95cc);
-var hWinM = mat(0xffd59a); hWinM.emissive = lc(0xffb35c); hWinM.emissiveIntensity = 0.25;
+var hWinM = mat(0xffd59a); hWinM.emissive = lc(0xffa24a); hWinM.emissiveIntensity = 0.25;
 var hCrystalM = mat(0xe6f2ff); hCrystalM.emissive = lc(0x8cc4ff); hCrystalM.emissiveIntensity = 0.3;
 var hStepGlowM = new THREE.MeshBasicMaterial({ color: lc(0x9fd0ff), transparent: true, opacity: 0.2 });
 
@@ -91,7 +91,7 @@ var hLantern = new THREE.Group(); hLantern.position.set(FX + 0.04, 0.5, 0.39); h
 hLantern.add(mesh(new THREE.BoxGeometry(0.06, 0.012, 0.012), hIronM, -0.03, 0.05, 0));
 hLantern.add(mesh(new THREE.BoxGeometry(0.035, 0.05, 0.035), hWinM, 0, 0, 0));
 hLantern.add(mesh(new THREE.ConeGeometry(0.03, 0.025, 4), hIronM, 0, 0.037, 0));
-var hLight = new THREE.PointLight(lc(0xffb867), 0, 2.2, 2); hLight.position.set(FX + 0.35, 0.55, 0); house.add(hLight);
+var hLight = new THREE.PointLight(lc(0xffb060), 0, 3.4, 2); hLight.position.set(FX + 0.45, 0.6, 0.1); // warm light spilling over the steps house.add(hLight);
 
 // ---- wooden bench with a blue cushion under the wing window ----
 var bench = new THREE.Group(); bench.position.set(WD / 2 - 0.04 + 0.1, 0, WZ - 0.02); house.add(bench);
@@ -327,6 +327,29 @@ var windTree = new THREE.Group(), wtSparkM;
 house.add(windTree);
 
 house.position.set(CX - 0.18, HC, 0.05);
+// glowing petals drifting down from the big wind tree toward the lagoon (2026-10-21)
+var PET = 34, petPos = new Float32Array(PET * 3), petV = [];
+function petReset(i, any) {
+  petPos[i * 3] = -0.9 + Math.random() * 1.1; petPos[i * 3 + 1] = any ? -1.4 + Math.random() * 3.8 : 1.9 + Math.random() * 0.6; petPos[i * 3 + 2] = -1.4 + Math.random() * 1.8;
+  petV[i] = { vy: 0.12 + Math.random() * 0.1, vx: 0.12 + Math.random() * 0.12, ph: Math.random() * 6.28 };
+}
+for (var pi_ = 0; pi_ < PET; pi_++) petReset(pi_, true);
+var petG = new THREE.BufferGeometry(); petG.setAttribute('position', new THREE.BufferAttribute(petPos, 3));
+var petM = new THREE.PointsMaterial({ color: lc(0xf2f8ff), size: 0.07, map: dotTex, transparent: true, opacity: 0.8, depthWrite: false, sizeAttenuation: true, fog: false });
+var petals = new THREE.Points(petG, petM); petals.frustumCulled = false; house.add(petals);
+var petLast = 0;
+function updatePetals(t, n) {
+  var dt = Math.min(0.05, Math.max(0, t - petLast)); petLast = t;
+  for (var i = 0; i < PET; i++) {
+    var v = petV[i];
+    petPos[i * 3 + 1] -= v.vy * dt * MM;
+    petPos[i * 3] += (v.vx + Math.sin(t * 1.3 + v.ph) * 0.15) * dt * MM;
+    petPos[i * 3 + 2] += Math.cos(t * 0.9 + v.ph) * 0.1 * dt * MM;
+    if (petPos[i * 3 + 1] < -1.5) petReset(i, false);
+  }
+  petG.attributes.position.needsUpdate = true;
+  petM.color.copy(lc(0xf2f8ff)).lerp(lc(0xa8dcff), n); petM.blending = n > 0.5 ? THREE.AdditiveBlending : THREE.NormalBlending; petM.opacity = lerp(0.8, 0.95, n);
+}
 scene.add(house);
 // tap the house just like the clearing
 houseSpot.label = "我们的小房子 ♡";
@@ -336,12 +359,12 @@ house.traverse(function (o) { o.userData.spot = houseSpot; });
 tapTargets.push(house);
 
 function updateHouse(t, n) {
-  hWinM.emissiveIntensity = lerp(0.25, 1.5, n);
+  hWinM.emissiveIntensity = lerp(0.25, 2.3, n); updatePetals(t, n);
   hCrystalM.emissiveIntensity = lerp(0.3, 1.6, n);
   hStepGlowM.opacity = lerp(0.2, 0.85, n);
   stoveLight.intensity = n * 0.6;
   wtSparkM.opacity = lerp(0.15, 1, n);
-  hLight.intensity = n * 1.1;
+  hLight.intensity = n * 2.2;
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
   mpBudM.opacity = lerp(0.6, 1, n); mpBuds.forEach(function (b, i) { b.position.y += 0; b.rotation.z = Math.sin(t * 1.1 + i) * 0.15 * MM; });
