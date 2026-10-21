@@ -111,7 +111,7 @@ var spout = mesh(new THREE.CylinderGeometry(0.004, 0.008, 0.04, 5), hTrimM, 0.03
 var kHandle = mesh(new THREE.TorusGeometry(0.022, 0.004, 4, 10, Math.PI), hIronM, 0, 0.24, 0); stove.add(kHandle);
 var stoveLight = new THREE.PointLight(lc(0xffa85a), 0, 0.9, 2); stoveLight.position.set(0.12, 0.15, 0); stove.add(stoveLight);
 
-// ---- hanging spider plant (吊兰) under the balcony corner + a low rounded-stone garden wall ----
+// ---- hanging spider plant (吊兰) under the balcony (she had the little stone wall by the bench removed, 2026-10-21) ----
 var hPlantM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, side: THREE.DoubleSide });
 function droopLeaf(a, len, up, w) { // a ribbon that arcs up-and-out from the pot rim, then droops down
   var seg = 8, pos = [], col = [], idx = [], cA = Math.cos(a), sA = Math.sin(a), c = new THREE.Color();
@@ -173,12 +173,6 @@ var potProfile = [[0, 0], [0.032, 0], [0.042, 0.012], [0.05, 0.035], [0.05, 0.05
   }
 });
 
-for (var wi = 0; wi < 9; wi++) {
-  var wa = -1.2 + wi * 0.13, wr = 0.95;
-  if (Math.abs(wa) < 0.32) continue;
-  var st = new THREE.Mesh(rockGeo(0.07, wi * 1.7, 0.75), rockVM);
-  st.position.set(Math.cos(wa) * wr - 0.1, 0.05, Math.sin(wa) * wr); house.add(st);
-}
 
 // ---- 小院: a patio of irregular moon-white flagstones with thin grass seams, plus a stepping-stone path ----
 // cells are a jittered-grid Voronoi (each stone = its point's cell, shrunk a little so grass shows between)
