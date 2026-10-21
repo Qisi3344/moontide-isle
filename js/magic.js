@@ -60,7 +60,7 @@ function floatRockGeo(s, k, grassy) {
 }
 var fRocks = [];
 [[200, 7.0, 3.2, 0.55], [262, 6.6, 4.6, 0.42], [128, 7.4, 2.6, 0.5], [20, 7.8, 4.0, 0.38]].forEach(function (d, i) {
-  var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
+  var q = polar(d[0], d[1]), g = new THREE.Group(), s = i < 2 ? d[3] : d[3] * 0.5; // bare stones half size (2026-10-21)
   // 2026-10-21 redo: was a faceted dark-blue shard with a flat green lid. Now a smooth stone body (moon-white top
   // fading to soft blue-grey, tapering down) wearing a patchy grass cap: dense/mid/light greens with a few bare
   // pale-stone spots, and a jagged grass fringe dripping over the rim.
