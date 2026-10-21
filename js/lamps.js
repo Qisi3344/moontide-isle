@@ -3,9 +3,9 @@
 // ---------- moon lamps + pier ----------
 var lampsG = new THREE.Group(); scene.add(lampsG);
 var lampStoneM = mat(0xe8eaf1), lampTrimM = mat(0xd6d9e4);
-var moonGlowM = mat(0xf3f8ff); moonGlowM.emissive = lc(0xd6ecff); moonGlowM.emissiveIntensity = 0.35;
+var moonGlowM = mat(0xdcefff); moonGlowM.emissive = lc(0x8fd2ff); moonGlowM.emissiveIntensity = 0.35; // soft ice-blue, not glaring white (2026-10-21)
 var runeM = new THREE.MeshBasicMaterial({ color: lc(0x9fdcff), transparent: true, opacity: 0.35 });
-var lampHaloM = new THREE.MeshBasicMaterial({ map: dotTex, color: lc(0xa8dcff), transparent: true, opacity: 0,
+var lampHaloM = new THREE.MeshBasicMaterial({ map: dotTex, color: lc(0x86ccff), transparent: true, opacity: 0,
   depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
 var plankM = [mat(0xeae0cc), mat(0xe1d5bd)], pierPostM = mat(0xa9a3a8);
 // a thin ring-like crescent (outer circle minus a slightly smaller circle shifted up), horns pointing up
@@ -119,7 +119,7 @@ var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.positio
 [-0.75, 0.75].forEach(function (a) {
   moonLamp(CX + Math.cos(a) * (CR + 0.3), Math.sin(a) * (CR + 0.3), a);
 });
-var clearLight = new THREE.PointLight(lc(0xffe2a0), 0, 2.6, 2); clearLight.position.set(CX + CR + 0.3, HC + 0.85, 0); lampsG.add(clearLight);
+var clearLight = new THREE.PointLight(lc(0xffb867), 0, 2.8, 2); clearLight.position.set(CX + CR + 0.3, HC + 0.85, 0); lampsG.add(clearLight);
 
 // ---- lamps along the low white-stone ledge toward both horns ----
 [-1.62, 1.62, -1.15, 1.15].forEach(function (ph, i) {
@@ -131,10 +131,10 @@ var clearLight = new THREE.PointLight(lc(0xffe2a0), 0, 2.6, 2); clearLight.posit
 function updateLamps(t, n) {
   leafTimeU.value = t * MM; grassTimeU.value = t * MM;
   grassBladeM.emissiveIntensity = n * 0.3; grassFlowerM.emissiveIntensity = lerp(0.15, 1.6, n);
-  moonGlowM.emissiveIntensity = lerp(0.12, 1.9, n);
+  moonGlowM.emissiveIntensity = lerp(0.12, 1.05, n); shroomCapM.emissiveIntensity = lerp(0.1, 1.3, n);
   runeM.opacity = lerp(0.35, 0.95, n);
   moonLeafM.forEach(function (m, k) { m.emissiveIntensity = n * (k ? 0.35 : 0.25); });
-  lampHaloM.opacity = n * 0.55;
+  lampHaloM.opacity = n * 0.32;
   lampMoons.forEach(function (m) {
     m.moon.position.y = 0.9 + Math.sin(t * 1.1 + m.ph) * 0.025 * MM;
     m.moon.rotation.y = t * 0.4 * MM + m.ph;
@@ -149,5 +149,5 @@ function updateLamps(t, n) {
   nlHalo.quaternion.copy(camera.quaternion); nightLamp.getWorldQuaternion(tmpQ); nlHalo.quaternion.premultiply(tmpQ.invert());
   moonBoat.position.y = -0.15 + Math.sin(t * 1.3) * 0.012 * MM;
   moonBoat.rotation.z = Math.sin(t * 0.9) * 0.05 * MM; moonBoat.rotation.x = Math.sin(t * 1.1 + 1) * 0.03 * MM;
-  clearLight.intensity = n * 0.9;
+  clearLight.intensity = n * 1.3;
 }
