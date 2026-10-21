@@ -292,7 +292,7 @@ var windTree = new THREE.Group(), wtSparkM;
     tips.main.push(pts[pts.length - 1]);
   });
   // the drooping limb on the right, hanging over the little dome
-  var dr = bough([H(-0.5, 2.24, 0.05), H(-0.75, 2.04, 0.12), H(-1.02, 1.95, 0.16), H(-1.32, 1.98, 0.18)], 0.04, 0.012, 0.08); // a low wisp streaming right
+  var dr = bough([H(-0.5, 2.24, 0.05), H(-0.75, 2.0, 0.12), H(-1.02, 1.86, 0.16), H(-1.32, 1.84, 0.18)], 0.04, 0.012, 0.08); // a low wisp streaming right
   [0.4, 0.65, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.03, -0.14)), s.clone().add(new V(-0.05, 0.02, 0.1))); });
   // the little limb on the left, just above the bend
   var lf = bough([at(0.62), H(0.5, 1.72, 0.05), H(0.58, 1.9, 0.06), H(0.6, 2.05, 0.04)], 0.04, 0.01, 0.08);
@@ -311,7 +311,7 @@ var windTree = new THREE.Group(), wtSparkM;
     fillMain.push([xx + Math.sin(z * 9) * 0.05, yy * SY - O.y, (z - O.z) * SZ, 0.17]);
   }
   mass(tips.main, fillMain, 0.15, 2300, 51, 0.42);
-  var wisp = []; [-0.85, -0.98, -1.1, -1.22, -1.34].forEach(function (z, i) { wisp.push([0.18, (1.98 - i * 0.01) * SY - O.y, (z - O.z) * SZ, 0.13 - i * 0.012]); });
+  var wisp = []; [-0.85, -0.98, -1.1, -1.22, -1.34].forEach(function (z, i) { wisp.push([0.18, (1.86 - i * 0.01) * SY - O.y, (z - O.z) * SZ, 0.13 - i * 0.012]); });
   mass(tips.right, wisp, 0.11, 480, 57, 0.4);
   mass(tips.left, [[0.05, 1.92 * SY - O.y, (0.55 - O.z) * SZ, 0.13]], 0.1, 170, 60, 0.4);
   // blue glints in the leaves and along the trunk (glow at night)
