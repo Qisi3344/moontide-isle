@@ -4,11 +4,47 @@
 var props = new THREE.Group(); scene.add(props);
 function mat(hex) { return toonMat(hex); }
 var stoneM = mat(0xdcdfe8), trunkM = mat(0x857b84), bloomM = [mat(0xf1f3fb), mat(0xdbe4f6)], bushM = [mat(0x5c9c7a), mat(0x6aa986)], stackM = mat(0x9ea2b5);
+// moonstone rocks: chunky rounded low-poly, pale white top fading to soft blue-grey underneath (vertex colours),
+// a gentle bulge noise by position so shared corners stay closed
+var rockVM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true });
+rockVM.onBeforeCompile = function (sh) { sh.uniforms.uRim = rimU; };
+var rockTop = lc(0xf1f4fa), rockMid = lc(0xc9d2e4), rockBot = lc(0x8996b6);
+function rockGeo(r, seed, sy, flatTop) {
+  var g = new THREE.IcosahedronGeometry(r, 1), p = g.attributes.position, sd = seed || 0, c = new THREE.Color(), col = [];
+  for (var i = 0; i < p.count; i++) {
+    var x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    var j = 1 + 0.13 * Math.sin(x * 9.1 / r + z * 6.7 / r + sd) * Math.cos(y * 7.3 / r + sd * 1.7);
+    x *= j; z *= j; y *= j * (sy || 0.7);
+    var ft = (flatTop === undefined ? 0.45 : flatTop) * r * (sy || 0.7);
+    if (y > ft) y = ft + (y - ft) * 0.3;
+    p.setXYZ(i, x, y, z);
+  }
+  var lo = 1e9, hi = -1e9;
+  for (i = 0; i < p.count; i++) { lo = Math.min(lo, p.getY(i)); hi = Math.max(hi, p.getY(i)); }
+  for (i = 0; i < p.count; i++) {
+    var t = (p.getY(i) - lo) / Math.max(1e-4, hi - lo);
+    if (t > 0.55) c.copy(rockMid).lerp(rockTop, (t - 0.55) / 0.45); else c.copy(rockBot).lerp(rockMid, t / 0.55);
+    col.push(c.r, c.g, c.b);
+  }
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+}
+function pebbleCluster(parent, x, z, sc, seed, y0) { // 2-3 little stones lying in the grass
+  var n = 2 + (seed % 2);
+  for (var i = 0; i < n; i++) {
+    var a = seed * 1.9 + i * 2.2, d = (0.22 + 0.1 * i) * sc, r = (0.07 + 0.035 * ((seed + i) % 3)) * sc;
+    var m = new THREE.Mesh(rockGeo(r, seed + i, 0.6), rockVM), px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+    m.position.set(px, (y0 === undefined ? height(px, pz) : y0) + r * 0.1, pz); m.rotation.y = a;
+    parent.add(m);
+  }
+}
+// flat moonstone slabs ringing the clearing
 var ring = new THREE.Group(); ring.position.set(CX, HC, 0); props.add(ring);
 for (var s = 0; s < 12; s++) {
-  var a = s / 12 * Math.PI * 2, st = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.08, 6), stoneM);
-  st.position.set(Math.cos(a) * CR, 0.03, Math.sin(a) * CR); st.rotation.y = a * 1.7;
-  st.scale.set(1 + (s % 3) * 0.12, 1, 1);
+  var a = s / 12 * Math.PI * 2, st = new THREE.Mesh(rockGeo(0.19, s * 3.1, 0.32, 0.2), rockVM);
+  st.position.set(Math.cos(a) * CR, 0.02, Math.sin(a) * CR); st.rotation.y = a * 1.7;
+  st.scale.set(1 + (s % 3) * 0.1, 1, 0.9);
   ring.add(st);
 }
 // moon tree, anime-style: silver-white bent trunk + a soft canopy.
@@ -179,10 +215,30 @@ function makeGrassTuft(seed, blades, flowers) {
   }
   return g;
 }
+function flatSpot(x, z, rad) { // nearest point within ~0.9 whose disc of radius rad sits on one terrace; prefers higher tiers
+  var best = null;
+  for (var ring_ = 0; ring_ <= 6; ring_++) {
+    var steps = ring_ ? 10 : 1;
+    for (var k = 0; k < steps; k++) {
+      var a = k / steps * Math.PI * 2, px = x + Math.cos(a) * ring_ * 0.15, pz = z + Math.sin(a) * ring_ * 0.15, h = height(px, pz), ok = inside(px, pz) > 0.3;
+      for (var q = 0; q < 10 && ok; q++) {
+        var b = q / 10 * Math.PI * 2;
+        if (Math.abs(height(px + Math.cos(b) * rad, pz + Math.sin(b) * rad) - h) > 0.03) ok = false;
+      }
+      if (ok && (!best || h > best[2] + 0.1)) best = [px, pz, h];
+    }
+    if (best && ring_ >= 2) break;
+  }
+  return best;
+}
 function bush(x, z, sc, seed) {
+  var f = flatSpot(x, z, 0.5 * sc * 1.15);
+  if (!f) return;
+  x = f[0]; z = f[1];
   var g = makeGrassTuft(seed || Math.round(Math.abs(x * 37 + z * 11)) + 1, 34, 4);
-  g.scale.setScalar(sc * 1.15); g.position.set(x, height(x, z) - 0.02, z); g.rotation.y = x * 3;
+  g.scale.setScalar(sc * 1.15); g.position.set(x, f[2] - 0.02, z); g.rotation.y = x * 3;
   props.add(g);
+  pebbleCluster(props, x, z, sc, (seed || 1) + 4);
 }
 function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos(a) * r, -Math.sin(a) * r]; }
 [[105, 4.0, 1.05], [140, 4.1, 0.9], [222, 4.05, 1.0], [258, 3.95, 0.85], [175, 4.15, 0.8]].forEach(function (d) {
@@ -196,8 +252,8 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
 });
 // little grey sea stacks off the cliffs
 [[100, 5.6, 0.35], [150, 5.8, 0.5], [165, 5.45, 0.25], [215, 5.7, 0.42], [250, 5.55, 0.3], [70, 5.9, 0.3], [283, 5.8, 0.38]].forEach(function (d, k) {
-  var q = polar(d[0], d[1]), sg = new THREE.DodecahedronGeometry(d[2], 0);
-  var m = new THREE.Mesh(sg, stackM); m.scale.set(1, 1.5 + (k % 3) * 0.3, 0.9);
+  var q = polar(d[0], d[1]), sg = rockGeo(d[2], k * 2.3, 1.0, 0.6);
+  var m = new THREE.Mesh(sg, rockVM); m.scale.set(1, 1.5 + (k % 3) * 0.3, 0.9);
   m.position.set(q[0], -0.25 + d[2] * 0.4, q[1]); m.rotation.y = k * 1.3; props.add(m);
 });
 [[120, 3.5, 1], [238, 3.5, 0.9], [80, 3.7, 0.75], [225, 3.3, 0.7], [285, 3.75, 0.7],
