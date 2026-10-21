@@ -188,7 +188,7 @@ grassBladeM.onBeforeCompile = function (sh) {
     "transformed.x += sin( uTime * 1.6 + position.x * 2.7 + position.z * 1.9 ) * 0.05 * bend;\n" +
     "transformed.z += sin( uTime * 1.2 + position.z * 3.3 ) * 0.035 * bend;");
 };
-var grassFlowerM = new THREE.MeshToonMaterial({ color: lc(0xf4f9ff), gradientMap: toonGrad, side: THREE.DoubleSide });
+var grassFlowerM = new THREE.MeshToonMaterial({ color: lc(0xd9ecff), gradientMap: toonGrad, side: THREE.DoubleSide });
 grassFlowerM.emissive = lc(0xbfe0ff); grassFlowerM.emissiveIntensity = 0.15;
 var moonGrassM = [grassBladeM, grassFlowerM];
 var starFlowerG = (function () {
@@ -200,6 +200,8 @@ var starFlowerG = (function () {
   return new THREE.ShapeGeometry(sh);
 })();
 var budG = new THREE.SphereGeometry(0.024, 8, 6);
+var grassStemM = toonMat(0xa9cbea); // milk blue
+var budPinkM = new THREE.MeshToonMaterial({ color: lc(0xf7d9d6), gradientMap: toonGrad }); budPinkM.emissive = lc(0xffb9b2); budPinkM.emissiveIntensity = 0.1; // milk pink
 // little glowing mushrooms tucked at stone edges and tree roots (2026-10-21, she asked for a few)
 // caps in soft beige-pink and beige-blue (she asked for colour, 2026-10-21: not every plant white)
 var shroomStemM = toonMat(0xf2ece3), shroomCapM = toonMat(0xf1c9c4), shroomCapM2 = toonMat(0xb9d3ee);
@@ -257,14 +259,16 @@ function makeGrassTuft(seed, blades, flowers) {
   for (var f = 0; f < F; f++) { // glowing moon-tide buds on thin stems (a star flower now and then)
     var fa = R() * Math.PI * 2, fr = Math.sqrt(R()) * 0.22, fh = 0.22 + R() * 0.3;
     var fx = Math.cos(fa) * fr, fz = Math.sin(fa) * fr;
-    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.007, fh, 4), grassBladeM);
-    stem.position.set(fx, fh / 2, fz); g.add(stem);
+    // stems used grassBladeM (vertexColors) without a colour attribute -> rendered BLACK. Own milk-blue material now,
+    // and a slight arc so they don't stand like pins (2026-10-21: never any black on the island)
+    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0065, fh, 5), grassStemM);
+    stem.position.set(fx, fh / 2, fz); stem.rotation.set((R() - 0.5) * 0.25, 0, (R() - 0.5) * 0.25); g.add(stem);
     if (f % 3 === 2) {
       var fl = new THREE.Mesh(starFlowerG, starPinkM);
       fl.position.set(fx, fh + 0.005, fz); fl.rotation.set(-Math.PI / 2 + (R() - 0.5) * 0.9, 0, R() * 6.3);
       fl.scale.setScalar(0.8 + R() * 0.5); g.add(fl);
     } else {
-      var bud = new THREE.Mesh(budG, grassFlowerM); bud.position.set(fx, fh + 0.01, fz); bud.scale.set(1, 1.45, 1); g.add(bud);
+      var bud = new THREE.Mesh(budG, f % 2 ? budPinkM : grassFlowerM); bud.position.set(fx + stem.rotation.z * -fh / 2, fh + 0.01, fz + stem.rotation.x * fh / 2); bud.scale.set(1, 1.45, 1); g.add(bud);
     }
   }
   return g;
