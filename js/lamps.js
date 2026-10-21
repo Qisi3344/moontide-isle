@@ -30,9 +30,12 @@ function moonLamp(x, z, ry, y) {
   g.add(mesh(new THREE.BoxGeometry(0.1, 0.56, 0.1), lampStoneM, 0, 0.38, 0));
   g.add(mesh(new THREE.BoxGeometry(0.15, 0.035, 0.15), lampTrimM, 0, 0.675, 0));
   g.add(mesh(new THREE.BoxGeometry(0.12, 0.03, 0.12), lampStoneM, 0, 0.705, 0));
-  // faint glowing rune stripe + tiny crescent carving on the front face
-  g.add(mesh(new THREE.BoxGeometry(0.012, 0.22, 0.004), runeM, 0, 0.3, 0.051));
-  var carve = mesh(crescentGeo, runeM, 0, 0.5, 0.052); carve.scale.setScalar(0.22); g.add(carve);
+  // faint glowing rune stripe + tiny crescent carving
+  for (var f = 0; f < 4; f++) { // on all four faces of the pillar
+    var face = new THREE.Group(); face.rotation.y = f * Math.PI / 2; g.add(face);
+    face.add(mesh(new THREE.BoxGeometry(0.012, 0.22, 0.004), runeM, 0, 0.3, 0.051));
+    var carve = mesh(crescentGeo, runeM, 0, 0.5, 0.052); carve.scale.setScalar(0.22); face.add(carve);
+  }
   // the floating moon
   var moon = mesh(crescentGeo, moonGlowM, 0, 0.9, 0);
   g.add(moon);
