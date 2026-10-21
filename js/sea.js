@@ -39,7 +39,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   ].join("\n"),
   fragmentShader: [
     "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep; varying vec3 vW; varying vec3 vN;",
-    "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
+    "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-2.95); }", // lagoon shore follows the wider beach
     "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
     " float s=max(0.,-inside(vW.xz)-0.12);",
     " float lag=(1.-smoothstep(2.4,3.6,length(vW.xz-vec2(2.4,0.))))*(1.-smoothstep(4.4,5.6,length(vW.xz))); float sd=s*(1.-0.25*lag);",
