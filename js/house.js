@@ -245,7 +245,7 @@ var windTree = new THREE.Group(), wtSparkM;
       for (var j = 0; j <= M; j++) {
         var th = j / M * Math.PI * 2, tw = th + t * 2.6;
         var fl = Math.sin(tw * 7) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 11 + t * 9) * 0.15;
-        var but = radAt.buttress ? Math.max(0, 1 - t * 5) * Math.max(0, Math.sin(th * 5 + 0.4)) * 0.2 : 0;
+        var but = radAt.buttress ? Math.max(0, 1 - t * 5) * Math.max(0, Math.sin(th * 5 + 0.4)) * 0.08 : 0;
         var rr = rad * (1 + depth * fl) + but, cx = Math.cos(th) * rr, cy = Math.sin(th) * rr;
         pos.push(P.x + Nn.x * cx + B.x * cy, P.y + Nn.y * cx + B.y * cy, P.z + Nn.z * cx + B.z * cy);
         c.copy(cGroove).lerp(cRidge, THREE.MathUtils.smoothstep(fl * depth / 0.16, -0.6, 0.5)); col.push(c.r, c.g, c.b);
@@ -266,7 +266,7 @@ var windTree = new THREE.Group(), wtSparkM;
   // trunk, laid out against her picture: leans in from the left corner and bends over at about dome-top height,
   // then runs almost level out to the right above both domes (2026-10-21: the upright version looked like a mound)
   var trunk = new THREE.CatmullRomCurve3([H(0.66, -0.04), H(0.62, 0.45, 0.02), H(0.56, 0.9, -0.02), H(0.42, 1.42, 0.03), H(0.22, 1.8), H(-0.04, 2.02, 0.02), H(-0.3, 2.14)]);
-  var trR = function (t) { return (0.1 + 0.11 * Math.pow(1 - t, 2) + 0.14 * Math.pow(Math.max(0, 1 - t * 6), 2)) * (1 + 0.07 * Math.sin(t * 15 + 0.7)) * (1.75 - 0.75 * t); }; // 2026-10-21 14:34 she drew it thicker, esp. the lower trunk
+  var trR = function (t) { return ((0.1 + 0.11 * Math.pow(1 - t, 2)) * (1.75 - 0.75 * t) + 0.06 * Math.pow(Math.max(0, 1 - t * 8), 2)) * (1 + 0.07 * Math.sin(t * 15 + 0.7)); }; // 14:55 foot flare trimmed: it spilled past the platform edge // 2026-10-21 14:34 she drew it thicker, esp. the lower trunk
   trR.buttress = true;
   tube(trunk, trR, 0.16, 54, 30);
   for (var r = 0; r < 6; r++) { // surface roots
