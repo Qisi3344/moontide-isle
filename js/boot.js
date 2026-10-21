@@ -16,6 +16,8 @@ btn.addEventListener("click", function () { setNight(!nightTarget); });
 
 var BOOT_BASE = document.currentScript && document.currentScript.getAttribute("data-base");
 if (BOOT_BASE === null || BOOT_BASE === undefined) BOOT_BASE = "js/";
+// house.html adds the workshop module after the island ones
+var BOOT_EXTRA = document.currentScript && document.currentScript.getAttribute("data-extra");
 (function () {
   var ok = false;
   try {
@@ -29,6 +31,7 @@ if (BOOT_BASE === null || BOOT_BASE === undefined) BOOT_BASE = "js/";
     return;
   }
   var files = ["core", "terrain", "props", "spots", "sky", "sea", "labels", "magic", "lamps", "house", "daynight", "main"];
+  if (BOOT_EXTRA) files = files.concat(BOOT_EXTRA.split(","));
   (function next(i) {
     if (i >= files.length) return;
     var s = document.createElement("script");
