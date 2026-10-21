@@ -6,7 +6,7 @@
 // low stone wall) dressed in the island's moonstone white + pale blue, so the only warm light on the
 // whole island is our windows. A small moon crystal on the dome tip and faint blue step lights from the other one.
 var house = new THREE.Group();
-var hWallM = mat(0xf0f2f8), hTrimM = mat(0xdde3ef), hDomeM = mat(0xd6e3f5), hBaseM = mat(0xc4cde0);
+var hWallM = mat(0xe4e8f1), hTrimM = mat(0xdde3ef), hDomeM = mat(0xd6e3f5), hBaseM = mat(0xc4cde0);
 var hWoodM = mat(0x9a6a4b), hWoodDarkM = mat(0x86604a), hIronM = mat(0xaab4c8);
 var hClothM = mat(0x6f95cc);
 var hWinM = mat(0xffd59a); hWinM.emissive = lc(0xffb35c); hWinM.emissiveIntensity = 0.25;
@@ -234,7 +234,7 @@ var windTree = new THREE.Group(), wtSparkM;
   var V = THREE.Vector3, O = new V(-0.7, 0.02, 0.72); // tree origin in house space
   var SY = 0.85, SZ = 1.15; // 2026-10-21 her edit: whole tree lower and flatter, stretched out to the right
   function H(z, y, x) { return new V((x || 0), y * SY - O.y, (z - O.z) * SZ); } // author points in house space (z: + left, - right as seen from the bay)
-  var cRidge = new THREE.Color(lc(0xeef1f8)), cGroove = new THREE.Color(lc(0x8f9bb5)), barkM = toonMat(0xffffff);
+  var cRidge = new THREE.Color(lc(0xe2e7f1)), cGroove = new THREE.Color(lc(0x8f9bb5)), barkM = toonMat(0xffffff);
   barkM.vertexColors = true; barkM.side = THREE.DoubleSide;
   // one seamless tapered tube along a smooth curve, with spiralling bark furrows (2026-10-21: chains of cylinders
   // looked like tofu snapped into blocks, so every limb is one continuous mesh now)
