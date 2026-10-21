@@ -1,16 +1,19 @@
 /* 月汐小岛 · sky.js — 天空、星星、月亮和灯光 */
 "use strict";
 // ---------- sky, stars, moon ----------
-var DAY = { top: lc(0x8fc0ef), bot: lc(0xcfe0f5), hemi: lc(0xd6e6ff), ground: lc(0x9ea8c4), dir: lc(0xfff3e2) };
+// Day = a low golden-hour sun (2026-10-21: she wanted day to feel like just-after-sunrise / sunset glow, not noon; the isle
+// isn't on Earth anyway). Apricot horizon, soft blue zenith, warm gold key light, cool blue shade. No purple.
+var DAY = { top: lc(0x7ea6d6), bot: lc(0xf6c7a2), hemi: lc(0xc4d3ef), ground: lc(0x8796be), dir: lc(0xffc58e) };
 var NIGHT = { top: lc(0x141c4d), bot: lc(0x4a5aa8), hemi: lc(0x6d74c9), ground: lc(0x3a3f6e), dir: lc(0x9fb4ff) };
-var skyU = { uTop: { value: DAY.top.clone() }, uBot: { value: DAY.bot.clone() } };
+var timeU = { value: 0 }, nightU = { value: 0 };
+var SUN_DIR = new THREE.Vector3(0.14, 0.36, -0.99).normalize(); // low sun off to the right of the default view: side light, long shadows
+var skyU = { uTop: { value: DAY.top.clone() }, uBot: { value: DAY.bot.clone() }, uSunD: { value: SUN_DIR }, uNight: nightU };
 scene.add(new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({
   uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
   vertexShader: "varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
-  fragmentShader: "uniform vec3 uTop,uBot; varying vec3 vP; void main(){ float h=normalize(vP).y; gl_FragColor=vec4(mix(uBot,uTop,smoothstep(-0.02,0.55,h)),1.); \n#include <encodings_fragment>\n}"
+  fragmentShader: "uniform vec3 uTop,uBot,uSunD; uniform float uNight; varying vec3 vP; void main(){ vec3 d=normalize(vP); float h=d.y; vec3 c=mix(uBot,uTop,smoothstep(-0.02,0.55,h)); float g=max(dot(d,uSunD),0.); c+=(1.-uNight)*(vec3(1.,0.62,0.36)*pow(g,5.)*0.38*(1.-smoothstep(0.,0.6,h))+vec3(1.,0.86,0.66)*pow(g,90.)*0.9); gl_FragColor=vec4(c,1.); \n#include <encodings_fragment>\n}"
 })));
 
-var timeU = { value: 0 }, nightU = { value: 0 };
 (function stars() {
   var n = 420, pos = new Float32Array(n * 3), ph = new Float32Array(n);
   for (var k = 0; k < n; k++) {
@@ -28,7 +31,6 @@ var timeU = { value: 0 }, nightU = { value: 0 };
 })();
 
 var MOON_DIR = new THREE.Vector3(-0.55, 0.5, -0.67).normalize(); // night light: back to the original direction (she preferred it, 2026-10-21)
-var SUN_DIR = new THREE.Vector3(0.65, 0.6, 0.45).normalize();
 // No moon for now (2026-10-21): the sky-shader moon + glitter path read like a snowflake biscuit; she asked for the original light.
 function placeMoon() {}
 function updateMoon() {}
