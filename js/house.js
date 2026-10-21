@@ -49,10 +49,10 @@ house.add(mesh(new THREE.BoxGeometry(MD + 0.08, 0.08, MW + 0.08), hBaseM, 0, 0.0
 house.add(mesh(new THREE.BoxGeometry(MD, MH, MW), hWallM, 0, 0.08 + MH / 2, 0));
 house.add(mesh(new THREE.BoxGeometry(MD + 0.07, 0.05, MW + 0.07), hTrimM, 0, 0.08 + MH, 0));   // cornice
 house.add(mesh(new THREE.BoxGeometry(MD + 0.03, 0.03, MW + 0.03), hTrimM, 0, 0.08 + MH * 0.52, 0)); // floor band
-var top = dome(house, 0, 0.08 + MH + 0.025, 0, 0.36);
+var domeTopY = dome(house, 0, 0.08 + MH + 0.025, 0, 0.36);
 // moon crystal on the tip
-house.add(mesh(new THREE.ConeGeometry(0.035, 0.08, 6), hTrimM, 0, top + 0.03, 0));
-var hCrystal = mesh(new THREE.OctahedronGeometry(0.055, 0), hCrystalM, 0, top + 0.13, 0);
+house.add(mesh(new THREE.ConeGeometry(0.035, 0.08, 6), hTrimM, 0, domeTopY + 0.03, 0));
+var hCrystal = mesh(new THREE.OctahedronGeometry(0.055, 0), hCrystalM, 0, domeTopY + 0.13, 0);
 hCrystal.scale.y = 1.6; house.add(hCrystal);
 // front (+x): wooden door + big window downstairs, window + balcony upstairs
 var FX = MD / 2 + 0.002;
@@ -368,6 +368,6 @@ function updateHouse(t, n) {
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
   mpBudM.opacity = lerp(0.6, 1, n); mpBuds.forEach(function (b, i) { b.position.y += 0; b.rotation.z = Math.sin(t * 1.1 + i) * 0.15 * MM; });
-  hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
+  hCrystal.position.y = domeTopY + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
 }
 if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
