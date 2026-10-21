@@ -99,6 +99,57 @@ for (var wi = 0; wi < 9; wi++) {
   st.position.set(Math.cos(wa) * wr - 0.1, 0.05, Math.sin(wa) * wr); house.add(st);
 }
 
+// ---- 小院: a patio of irregular moon-white flagstones with thin grass seams, plus a stepping-stone path ----
+// cells are a jittered-grid Voronoi (each stone = its point's cell, shrunk a little so grass shows between)
+var yard = new THREE.Group(); yard.position.set(CX, HC, 0); scene.add(yard);
+var flagM = [mat(0xeef0f6), mat(0xe2e6ef), mat(0xd5dbe8)], flagEdgeM = mat(0xc4cbdc);
+function yRand(k) { var x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+(function patio() {
+  var R = CR + 0.02, step = 0.26, pts = [];
+  for (var gx = -R - step; gx <= R + step; gx += step)
+    for (var gz = -R - step; gz <= R + step; gz += step) {
+      var k = pts.length + 1;
+      pts.push([gx + (yRand(k) - 0.5) * step * 0.7, gz + (yRand(k + 50) - 0.5) * step * 0.7]);
+    }
+  pts.forEach(function (p, i) {
+    if (Math.hypot(p[0], p[1]) > R - 0.1) return;
+    var poly = [[p[0] - 0.4, p[1] - 0.4], [p[0] + 0.4, p[1] - 0.4], [p[0] + 0.4, p[1] + 0.4], [p[0] - 0.4, p[1] + 0.4]];
+    pts.forEach(function (q, j) {
+      if (j === i || Math.abs(q[0] - p[0]) > 0.6 || Math.abs(q[1] - p[1]) > 0.6) return;
+      var nx = q[0] - p[0], nz = q[1] - p[1], mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, out = [];
+      for (var a = 0; a < poly.length; a++) { // keep the half nearer p
+        var A = poly[a], B = poly[(a + 1) % poly.length];
+        var da = (A[0] - mx) * nx + (A[1] - mz) * nz, db = (B[0] - mx) * nx + (B[1] - mz) * nz;
+        if (da <= 0) out.push(A);
+        if ((da <= 0) !== (db <= 0)) { var t = da / (da - db); out.push([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]); }
+      }
+      poly = out;
+    });
+    if (poly.length < 3) return;
+    var cx = 0, cz = 0; poly.forEach(function (v) { cx += v[0]; cz += v[1]; }); cx /= poly.length; cz /= poly.length;
+    var sh = new THREE.Shape();
+    poly.forEach(function (v, n) { // shrink toward the centre -> grass seams
+      var dx = v[0] - cx, dz = v[1] - cz, d = Math.hypot(dx, dz), f = Math.max(0.2, (d - 0.022) / d);
+      var X = cx + dx * f, Z = -(cz + dz * f);
+      if (n) sh.lineTo(X, Z); else sh.moveTo(X, Z);
+    });
+    var hgt = 0.022 + yRand(i + 9) * 0.012;
+    var g = new THREE.ExtrudeGeometry(sh, { depth: hgt, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.01, bevelSegments: 1 });
+    g.rotateX(-Math.PI / 2);
+    var m = new THREE.Mesh(g, flagM[Math.floor(yRand(i + 3) * 3)]);
+    m.position.y = 0.002; yard.add(m);
+  });
+})();
+// stepping stones from the front steps out toward the lagoon side
+for (var si = 0; si < 4; si++) {
+  var sx = CR + 0.12 + si * 0.25, sz = 0.25 + Math.sin(si * 1.3) * 0.08;
+  var wx = CX + sx, wz = sz;
+  if (Math.abs(height(wx, wz) - HC) > 0.05) break;
+  var ss_ = new THREE.Mesh(new THREE.CylinderGeometry(0.1 - si * 0.008, 0.11 - si * 0.008, 0.03, 9), flagM[si % 3]);
+  ss_.scale.z = 0.8; ss_.rotation.y = si * 0.7; ss_.position.set(sx, 0.015, sz); yard.add(ss_);
+}
+clearing.visible = false; ring.visible = false;   // the patio replaces the old round paving + ring slabs
+
 house.position.set(CX - 0.18, HC, 0.05);
 scene.add(house);
 // tap the house just like the clearing
@@ -116,4 +167,4 @@ function updateHouse(t, n) {
   hCrystal.rotation.y = t * 0.6 * MM;
   hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
 }
-if (window.Island) window.Island.house = house;
+if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
