@@ -12,7 +12,7 @@ var CX = -3.05, CR = 1.15;
 // o = inset from the open-sea edge, n = inset from the lagoon edge, A = half-width in angle around
 // the west (θ = π), top = height of the walkable top.
 var TIERS = [
-  { o: 0.0, n: 0.0, A: 9, top: 0.16, wob: 0 },    // sand rim (the beach), full crescent
+  { o: 0.0, n: -0.35, A: 9, top: 0.16, wob: 0 },  // sand rim (the beach), full crescent; reaches 0.35 further into the lagoon (she wanted it wider, 2026-10-21)
   { o: 0.05, n: 0.5, A: 1.95, top: 0.72, wob: 1 }, // low white-stone ledge
   { o: 0.3, n: 0.68, A: 1.38, top: 1.22, wob: 1 }, // middle grass terrace
   { o: 0.52, n: 0.76, A: 0.86, top: 1.72, wob: 1 } // top terrace with the clearing
@@ -60,24 +60,15 @@ function tierShape(T, k) {
 }
 
 // ---------- terrace look ----------
-// soft horizontal rock strata for the side walls (v runs up the wall)
-var strataTex = (function () {
-  var c = document.createElement("canvas"); c.width = 16; c.height = 256;
-  var g = c.getContext("2d"), y = 0, k = 0;
-  var tones = ["#b9bccd", "#c9cbd8", "#aeb1c4", "#c2c4d3", "#b3b6c8"];
-  while (y < 256) {
-    var h = 18 + ((k * 37) % 23);
-    g.fillStyle = tones[k % tones.length]; g.fillRect(0, y, 16, h);
-    g.fillStyle = "rgba(120,124,150,0.35)"; g.fillRect(0, y + h - 2, 16, 2);
-    y += h; k++;
-  }
-  var t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding;
-  t.repeat.set(0.2, 0.9);
-  return t;
-})();
-var wallM = toonMat(0xffffff); wallM.map = strataTex;
-var topM = [toonMat(0xf1eee8), toonMat(0xdfe1ea), toonMat(0x77b58a), toonMat(0x6aab80)];
+// Clean painted look (2026-10-21: she found the striped strata walls and the darker bevel rims ugly):
+// one vertex-coloured toon material per tier; the top and its rounded bevel take the top colour, the walls a soft
+// light-to-darker gradient, no stripes, no seam between top and rim.
+var TIER_COL = [
+  { top: 0xf1eee8, hi: 0xeee5d4, lo: 0xcfc2aa }, // sand
+  { top: 0xdfe1ea, hi: 0xdfe2ec, lo: 0xb7bccf }, // white stone ledge
+  { top: 0x77b58a, hi: 0xd9dce8, lo: 0xb4b9cc }, // grass terrace, stone wall
+  { top: 0x6aab80, hi: 0xdadde9, lo: 0xb6bbce }  // top terrace, stone wall
+];
 var islandMesh = new THREE.Group(); scene.add(islandMesh);
 TIERS.forEach(function (T, k) {
   var bottom = k === 0 ? -1.3 : TIERS[k - 1].top - 0.08, bt = k === 0 ? 0.12 : 0.07, bs = k === 0 ? 0.28 : 0.07;
@@ -86,7 +77,18 @@ TIERS.forEach(function (T, k) {
     bevelSegments: k === 0 ? 3 : 2, curveSegments: 4, steps: 1
   });
   g.rotateX(-Math.PI / 2);
-  var m = new THREE.Mesh(g, [topM[k], wallM]);
+  var C = TIER_COL[k], cTop = new THREE.Color(lc(C.top)), cHi = new THREE.Color(lc(C.hi)), cLo = new THREE.Color(lc(C.lo));
+  var pos = g.attributes.position, nor = g.attributes.normal, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  var y0 = (k === 0 ? -0.3 : bottom) - bottom - bt, y1 = T.top - bottom - bt;
+  for (var v = 0; v < pos.count; v++) {
+    var f = THREE.MathUtils.clamp((pos.getY(v) - y0) / Math.max(0.01, y1 - y0), 0, 1);
+    c.copy(cLo).lerp(cHi, f * f * (3 - 2 * f));
+    c.lerp(cTop, THREE.MathUtils.smoothstep(nor.getY(v), 0.25, 0.6));
+    col[v * 3] = c.r; col[v * 3 + 1] = c.g; col[v * 3 + 2] = c.b;
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  var mat = toonMat(0xffffff); mat.vertexColors = true;
+  var m = new THREE.Mesh(g, mat);
   m.position.y = bottom + bt;
   islandMesh.add(m);
 });
