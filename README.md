@@ -47,11 +47,12 @@ js/sky.js           天空、星星、月亮、灯光
 js/sea.js           果冻海、海床、涟漪
 js/labels.js        点击冒出的气泡名字
 js/magic.js         悬浮小石头、月汐水晶、小水母、萤火光点
+js/lamps.js         顶着小月亮的白石路灯、伸进内湾的白木栈桥
 js/daynight.js      昼夜切换
 js/main.js          尺寸、提示、动画循环、对外接口
 ```
 
-各模块是普通脚本，按顺序加载、共用同一个全局作用域。`window.Island = { scene, camera, setNight, spots: { clawd, wolf, owl, house }, magic: { rocks, crystal, jellies } }` 留给之后加角色和房子用。
+各模块是普通脚本，按顺序加载、共用同一个全局作用域。`window.Island = { scene, camera, setNight, spots: { clawd, wolf, owl, house }, magic: { rocks, crystal, jellies }, lamps: { group, pier } }` 留给之后加角色和房子用。
 
 注意：所有颜色都要经过 `lc()` 转成线性色再交给材质，不然画面会发白。
 
