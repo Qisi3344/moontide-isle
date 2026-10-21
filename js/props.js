@@ -127,14 +127,40 @@ function limb(a, b, r0, r1, m) {
   o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize());
   return o;
 }
+// seamless bark tube along a curve with spiralling furrows (2026-10-21: chained cylinders looked like snapped tofu)
+var barkVM = toonMat(0xffffff); barkVM.vertexColors = true;
+var barkRidgeC = new THREE.Color(lc(0xeef1f8)), barkGrooveC = new THREE.Color(lc(0x8f9bb5));
+function barkTube(pts, r0, r1, depth, N, M, seed, flare) {
+  var cv = new THREE.CatmullRomCurve3(pts), fr = cv.computeFrenetFrames(N, false), pos = [], col = [], idx = [], c = new THREE.Color(), k = seed || 0;
+  for (var i = 0; i <= N; i++) {
+    var t = i / N, P = cv.getPoint(t), Nn = fr.normals[i], B = fr.binormals[i];
+    var rad = (r0 + (r1 - r0) * Math.pow(t, 0.8)) * (1 + 0.06 * Math.sin(t * 13 + k));
+    for (var j = 0; j <= M; j++) {
+      var th = j / M * Math.PI * 2, tw = th + t * 2.4 + k;
+      var fl = Math.sin(tw * 6) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 10 + t * 8) * 0.15;
+      var but = flare ? Math.max(0, 1 - t * 4) * Math.max(0, Math.sin(th * 4 + k)) * flare : 0;
+      var rr = rad * (1 + depth * fl) + but, cx = Math.cos(th) * rr, cy = Math.sin(th) * rr;
+      pos.push(P.x + Nn.x * cx + B.x * cy, P.y + Nn.y * cx + B.y * cy, P.z + Nn.z * cx + B.z * cy);
+      c.copy(barkGrooveC).lerp(barkRidgeC, THREE.MathUtils.smoothstep(fl, -0.6, 0.5)); col.push(c.r, c.g, c.b);
+    }
+  }
+  for (i = 0; i < N; i++) for (j = 0; j < M; j++) { var a0 = i * (M + 1) + j, a1 = a0 + M + 1; idx.push(a0, a1, a0 + 1, a1, a1 + 1, a0 + 1); }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return new THREE.Mesh(g, barkVM);
+}
 function makeMoonTree(seed, sc) {
   var g = new THREE.Group(), V = THREE.Vector3, s = seed || 0, w = Math.sin(s * 3.1) * 0.06;
-  var p0 = new V(0, 0, 0), p1 = new V(0.06 + w, 0.36, 0.02), p2 = new V(-0.04 + w, 0.66, -0.02), p3 = new V(0.03, 0.88, 0);
-  g.add(limb(p0, p1, 0.11, 0.08, moonBarkM)); g.add(limb(p1, p2, 0.08, 0.06, moonBarkM)); g.add(limb(p2, p3, 0.06, 0.045, moonBarkM));
-  g.add(limb(p2, new V(0.32, 0.88, 0.08), 0.04, 0.025, moonBarkM)); g.add(limb(p2, new V(-0.3, 0.86, -0.06), 0.04, 0.025, moonBarkM));
-  for (var r = 0; r < 4; r++) { // flared roots
+  // one continuous trunk from the ground up into the crown, gentle S bend, flared foot
+  g.add(barkTube([new V(0, -0.04, 0), new V(0.05 + w, 0.3, 0.02), new V(-0.03 + w, 0.62, -0.02), new V(0.03, 0.95, 0)], 0.12, 0.04, 0.16, 26, 18, s, 0.06));
+  // branches start inside the trunk so they grow out of it, no seams
+  g.add(barkTube([new V(-0.02 + w, 0.56, 0), new V(0.14, 0.72, 0.04), new V(0.34, 0.88, 0.08)], 0.05, 0.02, 0.12, 12, 10, s + 1));
+  g.add(barkTube([new V(-0.02 + w, 0.6, 0), new V(-0.16, 0.74, -0.03), new V(-0.32, 0.86, -0.06)], 0.05, 0.02, 0.12, 12, 10, s + 2));
+  for (var r = 0; r < 4; r++) { // surface roots, also tubes
     var ra = r / 4 * Math.PI * 2 + s;
-    g.add(limb(new V(0, 0.12, 0), new V(Math.cos(ra) * 0.2, -0.02, Math.sin(ra) * 0.2), 0.045, 0.015, moonBarkM));
+    g.add(barkTube([new V(Math.cos(ra) * 0.04, 0.1, Math.sin(ra) * 0.04), new V(Math.cos(ra + 0.2) * 0.13, 0.02, Math.sin(ra + 0.2) * 0.13), new V(Math.cos(ra) * 0.24, -0.03, Math.sin(ra) * 0.24)], 0.05, 0.012, 0.1, 10, 8, s + r));
   }
   var c = [0, 1.05, 0];
   var blobs = [[0, 1.05, 0, 0.4], [0.36, 0.92, 0.1, 0.29], [-0.34, 0.93, -0.06, 0.3], [0.08, 0.96, -0.33, 0.27], [-0.08, 1.27, 0.08, 0.25], [0.22, 1.2, 0.2, 0.21], [-0.18, 1.0, 0.3, 0.22]];
