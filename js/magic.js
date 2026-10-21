@@ -19,7 +19,7 @@ function dotMat(hex, size) {
 function rnd(a, b) { return a + Math.random() * (b - a); }
 
 // ---- floating rock islets ----
-var fRockM = mat(0xcfc6b8), fGrassM = mat(0x8fc46a), fBushM = mat(0x6daa4f);
+var fRockM = mat(0xaeb1c3), fGrassM = mat(0x6fae82), fBushM = mat(0x2f5d6e);
 var fRocks = [];
 [[200, 7.0, 3.2, 0.55], [262, 6.6, 4.6, 0.42], [128, 7.4, 2.6, 0.5], [20, 7.8, 4.0, 0.38]].forEach(function (d, i) {
   var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
@@ -50,10 +50,10 @@ var fRocks = [];
   fRocks.push({ g: g, base: d[2], ph: i * 1.7, spin: (i % 2 ? -1 : 1) * rnd(0.08, 0.16), s: s, pts: pts, life: life, kick: -9 });
 });
 
-// ---- 月汐水晶 crystal cluster: moonstone white + sea-glass mint ----
+// ---- 月汐水晶 crystal cluster: moonstone white + pale moon blue ----
 var crystal = new THREE.Group();
 var cLilac = new THREE.MeshStandardMaterial({ color: lc(0xeaf4f3), emissive: lc(0xbfe8ee), emissiveIntensity: 0.3, roughness: 0.2, metalness: 0, flatShading: true, transparent: true, opacity: 0.88 });
-var cMint = cLilac.clone(); cMint.color = lc(0xa8ebd9); cMint.emissive = lc(0x8fe6cf);
+var cMint = cLilac.clone(); cMint.color = lc(0xa9cdf6); cMint.emissive = lc(0x8fbaf2);
 function prism(h, r, m, x, z, tx, tz) {
   var g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(r, r * 0.9, h, 6), m, 0, h / 2, 0));
@@ -85,8 +85,25 @@ function startBurst() {
   burstG.attributes.position.needsUpdate = true; burstT = timeU.value;
 }
 
+// ---- moon sigil glowing on the lagoon floor ----
+var sigilTex = (function () {
+  var c = document.createElement("canvas"); c.width = c.height = 256;
+  var g = c.getContext("2d"); g.strokeStyle = g.fillStyle = "#fff"; g.lineCap = "round";
+  g.lineWidth = 3; g.beginPath(); g.arc(128, 128, 118, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 1.5; g.beginPath(); g.arc(128, 128, 106, 0, Math.PI * 2); g.stroke();
+  for (var d = 0; d < 24; d++) { var a = d / 24 * Math.PI * 2; g.beginPath(); g.arc(128 + Math.cos(a) * 112, 128 + Math.sin(a) * 112, d % 6 ? 1.6 : 3, 0, Math.PI * 2); g.fill(); }
+  g.beginPath(); g.arc(128, 128, 78, 0, Math.PI * 2); g.arc(150, 112, 66, 0, Math.PI * 2, true); g.fill("evenodd");
+  g.beginPath();
+  for (var k = 0; k < 8; k++) { var r = k % 2 ? 9 : 40, b = k / 8 * Math.PI * 2 - Math.PI / 2; g[k ? "lineTo" : "moveTo"](168 + Math.cos(b) * r, 104 + Math.sin(b) * r); }
+  g.closePath(); g.fill();
+  return new THREE.CanvasTexture(c);
+})();
+var sigilM = new THREE.MeshBasicMaterial({ map: sigilTex, color: lc(0xc4f4ff), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+var sigil = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), sigilM);
+sigil.rotation.x = -Math.PI / 2; sigil.position.set(3.15, -0.95, 0); sigil.renderOrder = 1; magicG.add(sigil);
+
 // ---- night jellyfish ----
-var jellyCols = [0xf7b6d2, 0xc9b6f2, 0xa6eedc];
+var jellyCols = [0xf7b6d2, 0xa9c8f5, 0xa6eedc];
 var domeG = new THREE.SphereGeometry(0.2, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
 var coreG = new THREE.SphereGeometry(0.09, 8, 5);
 var jellies = [];
@@ -131,6 +148,8 @@ function checkRipples(t) {
 // ---- per frame ----
 function updateMagic(dt, t, n) {
   checkRipples(t);
+  sigil.rotation.z = t * 0.03 * MM;
+  sigilM.opacity = lerp(0.35, 0.95, n) * (0.88 + 0.12 * Math.sin(t * 1.2));
   // floating rocks
   fRocks.forEach(function (o) {
     var a = t - o.kick, k = a >= 0 && a < 2.5 ? Math.sin(a * 6) * Math.exp(-1.8 * a) * 0.35 : 0;
