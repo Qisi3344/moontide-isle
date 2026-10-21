@@ -2,7 +2,7 @@
 "use strict";
 // ---------- props: stones, moon-blossom trees, pines, bushes, sea stacks ----------
 var props = new THREE.Group(); scene.add(props);
-function mat(hex) { return new THREE.MeshStandardMaterial({ color: lc(hex), flatShading: true, roughness: 0.85 }); }
+function mat(hex) { return toonMat(hex); }
 var stoneM = mat(0xdcdfe8), trunkM = mat(0x857b84), bloomM = [mat(0xf1f3fb), mat(0xdbe4f6)], pineM = mat(0x2f5d6e), pineM2 = mat(0x3a6d7c), bushM = [mat(0x5c9c7a), mat(0x6aa986)], stackM = mat(0x9ea2b5);
 var ring = new THREE.Group(); ring.position.set(CX, HC, 0); props.add(ring);
 for (var s = 0; s < 12; s++) {
