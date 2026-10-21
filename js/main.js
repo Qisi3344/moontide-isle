@@ -43,6 +43,7 @@ renderer.setAnimationLoop(function () {
   updateSpots(timeU.value, nightU.value);
   updateMagic(dt, timeU.value, nightU.value);
   updateLamps(timeU.value, nightU.value);
+  updateHouse(timeU.value, nightU.value);
   renderer.render(scene, camera);
 });
 
