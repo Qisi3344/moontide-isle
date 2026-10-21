@@ -133,7 +133,7 @@ function updateLamps(t, n) {
   grassBladeM.emissiveIntensity = n * 0.3; grassFlowerM.emissiveIntensity = lerp(0.15, 1.6, n);
   moonGlowM.emissiveIntensity = lerp(0.12, 1.05, n); shroomCapM.emissiveIntensity = shroomCapM2.emissiveIntensity = lerp(0.1, 1.1, n); starPinkM.emissiveIntensity = lerp(0.1, 0.9, n);
   runeM.opacity = lerp(0.35, 0.95, n);
-  moonLeafM.forEach(function (m, k) { m.emissiveIntensity = n * (k ? 0.35 : 0.25); });
+  moonLeafM.forEach(function (m, k) { m.emissiveIntensity = n * (k === 3 ? 0.6 : k ? 0.35 : 0.25); });
   lampHaloM.opacity = n * 0.32;
   lampMoons.forEach(function (m) {
     m.moon.position.y = 0.9 + Math.sin(t * 1.1 + m.ph) * 0.025 * MM;
