@@ -85,6 +85,7 @@ var clearLight = new THREE.PointLight(lc(0xffe2a0), 0, 2.6, 2); clearLight.posit
 function updateLamps(t, n) {
   moonGlowM.emissiveIntensity = lerp(0.35, 1.9, n);
   runeM.opacity = lerp(0.35, 0.95, n);
+  moonLeafM.forEach(function (m, k) { m.emissiveIntensity = n * (k ? 0.35 : 0.25); });
   lampHaloM.opacity = n * 0.55;
   lampMoons.forEach(function (m) {
     m.moon.position.y = 0.9 + Math.sin(t * 1.1 + m.ph) * 0.025 * MM;
