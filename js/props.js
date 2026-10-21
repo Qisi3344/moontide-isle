@@ -241,7 +241,8 @@ function bush(x, z, sc, seed) {
   pebbleCluster(props, x, z, sc, (seed || 1) + 4);
 }
 function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos(a) * r, -Math.sin(a) * r]; }
-[[105, 4.0, 1.05], [140, 4.1, 0.9], [222, 4.05, 1.0], [258, 3.95, 0.85], [175, 4.15, 0.8]].forEach(function (d) {
+// (175° tree removed to make room for the wind-swept tree behind the house)
+[[105, 4.0, 1.05], [140, 4.1, 0.9], [222, 4.05, 1.0], [258, 3.95, 0.85]].forEach(function (d) {
   var q = polar(d[0], d[1]);
   if (inside(q[0], q[1]) > 0.3) blossom(q[0], q[1], d[2], d[0] % 3);
 });
