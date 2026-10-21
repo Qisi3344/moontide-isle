@@ -1,7 +1,7 @@
 /* 月汐小岛 · sky.js — 天空、星星、月亮和灯光 */
 "use strict";
 // ---------- sky, stars, moon ----------
-var DAY = { top: lc(0x8fc0ef), bot: lc(0xcfe0f5), hemi: lc(0xd6e6ff), ground: lc(0xb9bfd0), dir: lc(0xfff6e8) };
+var DAY = { top: lc(0x8fc0ef), bot: lc(0xcfe0f5), hemi: lc(0xd6e6ff), ground: lc(0x9ea8c4), dir: lc(0xfff3e2) };
 var NIGHT = { top: lc(0x141c4d), bot: lc(0x4a5aa8), hemi: lc(0x6d74c9), ground: lc(0x3a3f6e), dir: lc(0x9fb4ff) };
 var skyU = { uTop: { value: DAY.top.clone() }, uBot: { value: DAY.bot.clone() } };
 scene.add(new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({
