@@ -231,94 +231,94 @@ clearing.visible = false; ring.visible = false;   // the patio replaces the old 
 // flat, lacy layer of small leaf cards (not clumps), slightly drooping at the right end, with blue glints in it.
 var windTree = new THREE.Group(), wtSparkM;
 (function () {
-  var V = THREE.Vector3;
-  function bough(pts, r0, r1, seg) { // tapered chain of limbs along a smooth curve
-    var cv = new THREE.CatmullRomCurve3(pts), N = seg || pts.length * 3, prev = cv.getPoint(0);
-    for (var i = 1; i <= N; i++) {
-      var q = cv.getPoint(i / N), ra = r0 + (r1 - r0) * (i - 1) / N, rb = r0 + (r1 - r0) * i / N;
-      windTree.add(limb(prev, q, ra, rb, moonBarkM)); prev = q;
-    }
-    return cv;
-  }
-  // trunk: one thick ancient tube with deep spiralling furrows (ridges + grooves, darker in the grooves), wide at
-  // the foot and flaring into buttress roots — 2026-10-21 she said the first try looked like a coconut palm.
-  // natural S-bend (she said the smooth arc looked like a bent noodle): the foot leans in, the middle bellies out to
-  // the left, a kink, then the top sweeps away to the right, with knobbly changes in thickness along the way
-  var tp = [new V(0, -0.04, 0), new V(0.03, 0.28, 0.1), new V(-0.03, 0.55, 0.27), new V(0.05, 0.82, 0.33), new V(0.0, 1.05, 0.24),
-    new V(-0.05, 1.22, 0.05), new V(0.03, 1.38, -0.12), new V(0.0, 1.5, -0.42), new V(0.06, 1.6, -0.7)];
-  var trunk = new THREE.CatmullRomCurve3(tp);
-  (function () {
-    var N = 44, M = 30, fr = trunk.computeFrenetFrames(N, false), pos = [], col = [], idx = [];
-    var cRidge = new THREE.Color(lc(0xeef1f8)), cGroove = new THREE.Color(lc(0x8f9bb5)), c = new THREE.Color();
+  var V = THREE.Vector3, O = new V(-0.7, 0.02, 0.72); // tree origin in house space
+  function H(z, y, x) { return new V((x || 0), y - O.y, z - O.z); } // author points in house space (z: + left, - right as seen from the bay)
+  var cRidge = new THREE.Color(lc(0xeef1f8)), cGroove = new THREE.Color(lc(0x8f9bb5)), barkM = toonMat(0xffffff);
+  barkM.vertexColors = true; barkM.side = THREE.DoubleSide;
+  // one seamless tapered tube along a smooth curve, with spiralling bark furrows (2026-10-21: chains of cylinders
+  // looked like tofu snapped into blocks, so every limb is one continuous mesh now)
+  function tube(cv, radAt, depth, N, M) {
+    var fr = cv.computeFrenetFrames(N, false), pos = [], col = [], idx = [], c = new THREE.Color();
     for (var i = 0; i <= N; i++) {
-      var t = i / N, P = trunk.getPoint(t), Nn = fr.normals[i], B = fr.binormals[i];
-      var rad = 0.13 + 0.12 * Math.pow(1 - t, 2.2) + 0.16 * Math.pow(Math.max(0, 1 - t * 6), 2); // thick, flared foot
-      rad *= (t > 0.85 ? 1 - (t - 0.85) * 2.4 : 1) * (1 + 0.09 * Math.sin(t * 17 + 0.7) + 0.05 * Math.sin(t * 31)); // knots and bulges
+      var t = i / N, P = cv.getPoint(t), Nn = fr.normals[i], B = fr.binormals[i], rad = radAt(t);
       for (var j = 0; j <= M; j++) {
-        var th = j / M * Math.PI * 2, tw = th + t * 2.6; // furrows spiral up the trunk
-        var fl = Math.sin(tw * 7) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 11 + t * 9) * 0.15; // -1..1
-        var buttress = Math.max(0, 1 - t * 5) * Math.max(0, Math.sin(th * 5 + 0.4)) * 0.22; // root buttresses at the foot
-        var rr = rad * (1 + 0.16 * fl) + buttress, cx = Math.cos(th) * rr, cy = Math.sin(th) * rr;
+        var th = j / M * Math.PI * 2, tw = th + t * 2.6;
+        var fl = Math.sin(tw * 7) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 11 + t * 9) * 0.15;
+        var but = radAt.buttress ? Math.max(0, 1 - t * 5) * Math.max(0, Math.sin(th * 5 + 0.4)) * 0.2 : 0;
+        var rr = rad * (1 + depth * fl) + but, cx = Math.cos(th) * rr, cy = Math.sin(th) * rr;
         pos.push(P.x + Nn.x * cx + B.x * cy, P.y + Nn.y * cx + B.y * cy, P.z + Nn.z * cx + B.z * cy);
-        c.copy(cGroove).lerp(cRidge, THREE.MathUtils.smoothstep(fl, -0.6, 0.5)); col.push(c.r, c.g, c.b);
+        c.copy(cGroove).lerp(cRidge, THREE.MathUtils.smoothstep(fl * depth / 0.16, -0.6, 0.5)); col.push(c.r, c.g, c.b);
       }
     }
-    for (i = 0; i < N; i++) for (j = 0; j < M; j++) {
-      var a0 = i * (M + 1) + j, a1 = a0 + M + 1;
-      idx.push(a0, a1, a0 + 1, a1, a1 + 1, a0 + 1);
-    }
+    for (i = 0; i < N; i++) for (j = 0; j < M; j++) { var a0 = i * (M + 1) + j, a1 = a0 + M + 1; idx.push(a0, a1, a0 + 1, a1, a1 + 1, a0 + 1); }
     var g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
     g.setIndex(idx); g.computeVertexNormals();
-    var m = toonMat(0xffffff); m.vertexColors = true; m.side = THREE.DoubleSide;
-    windTree.add(new THREE.Mesh(g, m));
-  })();
-  for (var r = 0; r < 6; r++) { // gnarled surface roots creeping out from the buttresses
+    windTree.add(new THREE.Mesh(g, barkM));
+  }
+  function bough(pts, r0, r1, depth) {
+    var cv = new THREE.CatmullRomCurve3(pts);
+    tube(cv, function (t) { return r0 + (r1 - r0) * Math.pow(t, 0.8); }, depth || 0.1, 18, 12);
+    return cv;
+  }
+  // trunk, laid out from her marked-up picture: rises on the left of the big dome, leans a little left, then bends
+  // over to the right above the dome
+  var trunk = new THREE.CatmullRomCurve3([H(0.72, -0.04), H(0.76, 0.45, 0.02), H(0.72, 0.95, -0.02), H(0.58, 1.42, 0.03), H(0.32, 1.82), H(0.06, 2.02, 0.02)]);
+  var trR = function (t) { return (0.11 + 0.1 * Math.pow(1 - t, 2) + 0.14 * Math.pow(Math.max(0, 1 - t * 6), 2)) * (1 + 0.07 * Math.sin(t * 15 + 0.7)); };
+  trR.buttress = true;
+  tube(trunk, trR, 0.16, 48, 30);
+  for (var r = 0; r < 6; r++) { // surface roots
     var ra = r / 6 * Math.PI * 2 + 0.6, rl = 0.42 + (r % 3) * 0.1;
-    bough([new V(Math.cos(ra) * 0.2, 0.08, Math.sin(ra) * 0.2), new V(Math.cos(ra + 0.2) * rl * 0.6, 0.03, Math.sin(ra + 0.2) * rl * 0.6), new V(Math.cos(ra) * rl, -0.03, Math.sin(ra) * rl)], 0.075, 0.02, 5);
+    bough([new V(Math.cos(ra) * 0.15, 0.1, Math.sin(ra) * 0.15), new V(Math.cos(ra + 0.2) * rl * 0.6, 0.03, Math.sin(ra + 0.2) * rl * 0.6), new V(Math.cos(ra) * rl, -0.03, Math.sin(ra) * rl)], 0.08, 0.018, 0.08);
   }
-  // limbs fanning right from the bend, each splitting into twigs; tips feed the crown
-  var tips = [];
-  var limbs = [ // [start t on trunk, mid, end]
-    [0.78, new V(-0.12, 1.75, -0.55), new V(-0.2, 1.95, -1.1)],
-    [0.84, new V(0.0, 1.82, -0.75), new V(0.02, 1.98, -1.45)],
-    [0.9, new V(0.14, 1.72, -0.8), new V(0.22, 1.82, -1.5)],
-    [0.95, new V(0.05, 1.6, -0.9), new V(0.08, 1.6, -1.7)],
-    [0.7, new V(-0.06, 1.55, 0.05), new V(-0.1, 1.85, 0.22)] // short one back over the left
+  function at(t) { return trunk.getPoint(t); }
+  var top = at(1), tips = { main: [], right: [], left: [] };
+  // continuation of the trunk: main limbs fanning right under the big crown
+  var mains = [
+    [top.clone(), H(-0.2, 2.24, 0.1), H(-0.5, 2.4, 0.05), H(-0.92, 2.5, 0.08), H(-1.2, 2.3, 0.02)],
+    [at(0.93), H(-0.05, 2.35, -0.12), H(-0.25, 2.66, -0.1), H(-0.45, 2.82, -0.05)],
+    [at(0.97), H(-0.25, 2.15, -0.15), H(-0.6, 2.25, -0.2), H(-0.95, 2.3, -0.18)],
+    [at(0.85), H(0.22, 2.18, 0.12), H(0.12, 2.5, 0.15), H(0.05, 2.72, 0.1)]
   ];
-  limbs.forEach(function (L, k) {
-    var a = trunk.getPoint(L[0]), b = L[1], c = L[2];
-    var j1 = a.clone().lerp(b, 0.5).add(new V(Math.sin(k * 2.1) * 0.07, 0.06 + Math.cos(k * 1.7) * 0.04, Math.cos(k * 2.9) * 0.06));
-    var j2 = b.clone().lerp(c, 0.5).add(new V(Math.cos(k * 1.3) * 0.06, Math.sin(k * 2.3) * 0.06 - 0.03, Math.sin(k * 3.7) * 0.07));
-    bough([a, j1, b, j2, c], 0.085, 0.024, 10); // crooked, with a couple of elbows instead of one smooth arc
-    [[0.12, 0.08, -0.15], [-0.1, 0.12, 0.05], [0.04, -0.04, -0.3]].forEach(function (o, j) {
-      var s = b.clone().lerp(c, 0.55), e = c.clone().add(new V(o[0], o[1], o[2] * (k === 4 ? -0.6 : 1)));
-      bough([s, s.clone().lerp(e, 0.5).add(new V(0, 0.05, 0)), e], 0.025, 0.01, 3);
-      tips.push(e);
+  mains.forEach(function (pts, k) {
+    var cv = bough(pts, k === 0 ? 0.1 : 0.075, 0.018, 0.1);
+    [0.45, 0.7, 0.92].forEach(function (u, j) {
+      var s = cv.getPoint(u), e = s.clone().add(new V((j - 1) * 0.12, 0.2 + 0.06 * j, -0.12 - 0.05 * k));
+      bough([s, s.clone().lerp(e, 0.5).add(new V(0.03, 0.04, 0.02)), e], 0.03, 0.008, 0.05); tips.main.push(e, s);
     });
-    tips.push(c, b.clone().lerp(c, 0.5));
+    tips.main.push(pts[pts.length - 1]);
   });
-  // crown: one broad flat lacy layer of small cards over all tips, plus fill blobs between them
-  var blobs = [];
-  tips.forEach(function (t) { blobs.push([t.x, t.y + 0.02, t.z, 0.22]); });
-  for (var z = 0.2; z > -1.75; z -= 0.22) {
-    var droop = z < -1.2 ? (z + 1.2) * 0.35 : 0;
-    blobs.push([-0.05 + Math.sin(z * 5) * 0.12, 1.96 + droop + Math.cos(z * 3) * 0.05, z, 0.26]);
+  // the drooping limb on the right: leaves the main limb, arcs down beside the big dome toward the little dome
+  var dr = bough([H(-0.3, 2.3, 0.1), H(-0.52, 2.18, 0.2), H(-0.66, 1.85, 0.28), H(-0.72, 1.45, 0.3)], 0.055, 0.015, 0.08);
+  [0.35, 0.6, 0.85, 1].forEach(function (u) { var s = dr.getPoint(u); tips.right.push(s, s.clone().add(new V(0.05, -0.12, -0.15)), s.clone().add(new V(-0.05, -0.06, 0.12))); });
+  // the little limb on the left: off the trunk, up and out to the left
+  var lf = bough([at(0.42), H(0.82, 1.32, 0.05), H(0.86, 1.62, 0.08), H(0.8, 1.86, 0.05)], 0.05, 0.012, 0.08);
+  [0.5, 0.8, 1].forEach(function (u) { var s = lf.getPoint(u); tips.left.push(s, s.clone().add(new V(0, 0.04, 0.12))); });
+  // three leaf masses where she boxed them: a broad one up top, a drooping one at the right, a small one at the left
+  var allBlobs = [], R0 = 51;
+  function mass(list, fill, rad, cnt, seed) {
+    var blobs = list.map(function (t) { return [t.x, t.y + 0.03, t.z, rad]; }).concat(fill);
+    var cx = 0, cy = 0, cz = 0; blobs.forEach(function (b) { cx += b[0]; cy += b[1]; cz += b[2]; });
+    windTree.add(leafCards(blobs, [cx / blobs.length, cy / blobs.length - 0.2, cz / blobs.length], 0.62, seed, cnt));
+    allBlobs = allBlobs.concat(blobs);
   }
-  var crown = leafCards(blobs, [0, 1.6, -0.7], 0.62, 51, 1300);
-  var cg = new THREE.Group(); cg.add(crown); cg.position.y = 1.9; crown.position.y = -1.9; cg.scale.y = 0.55;
-  windTree.add(cg);
-  // blue glints in the crown and along the trunk (glow at night)
+  var fillMain = [];
+  for (var z = 0.25; z > -1.25; z -= 0.18) fillMain.push([Math.sin(z * 4) * 0.12, 2.62 + Math.cos(z * 2.4) * 0.12 - Math.max(0, -z - 0.9) * 0.4 - O.y, z - O.z, 0.27]);
+  for (z = 0.1; z > -1.1; z -= 0.3) fillMain.push([0.15, 2.85 - O.y, z - O.z, 0.2]);
+  mass(tips.main, fillMain, 0.22, 1150, R0);
+  mass(tips.right, [[0.28, 1.65 - O.y, -0.7 - O.z, 0.24], [0.3, 1.3 - O.y, -0.75 - O.z, 0.2]], 0.17, 420, R0 + 6);
+  mass(tips.left, [[0.06, 1.6 - O.y, 0.86 - O.z, 0.18]], 0.13, 170, R0 + 9);
+  // blue glints in the leaves and along the trunk (glow at night)
   var sp = [], rs = 77;
   function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
-  for (var k = 0; k < 90; k++) { var b = blobs[Math.floor(R() * blobs.length)]; sp.push(b[0] + (R() - 0.5) * 0.4, 1.9 + (b[1] - 1.9) * 0.55 + (R() - 0.5) * 0.18, b[2] + (R() - 0.5) * 0.4); }
-  for (k = 0; k < 24; k++) { var q = trunk.getPoint(R()); sp.push(q.x + (R() - 0.5) * 0.2, q.y, q.z + (R() - 0.5) * 0.2); }
+  for (var k = 0; k < 110; k++) { var b = allBlobs[Math.floor(R() * allBlobs.length)]; sp.push(b[0] + (R() - 0.5) * b[3] * 1.6, b[1] + (R() - 0.5) * b[3] * 1.4, b[2] + (R() - 0.5) * b[3] * 1.6); }
+  for (k = 0; k < 28; k++) { var q = trunk.getPoint(R()); sp.push(q.x + (R() - 0.5) * 0.24, q.y, q.z + (R() - 0.5) * 0.24); }
   var sg = new THREE.BufferGeometry(); sg.setAttribute("position", new THREE.Float32BufferAttribute(sp, 3));
   wtSparkM = new THREE.PointsMaterial({ color: lc(0x8fd0ff), size: 0.045, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending });
   windTree.add(new THREE.Points(sg, wtSparkM));
+  windTree.position.copy(O); windTree.scale.setScalar(0.9);
 })();
-windTree.position.set(-0.62, 0.02, 0.82);
 house.add(windTree);
 
 house.position.set(CX - 0.18, HC, 0.05);
