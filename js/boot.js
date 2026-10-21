@@ -28,7 +28,7 @@ if (BOOT_BASE === null || BOOT_BASE === undefined) BOOT_BASE = "js/";
     if (hint) hint.textContent = "这台设备打不开 3D 小岛 QAQ";
     return;
   }
-  var files = ["core", "terrain", "props", "spots", "sky", "sea", "labels", "magic", "lamps", "daynight", "main"];
+  var files = ["core", "terrain", "props", "spots", "sky", "sea", "labels", "magic", "lamps", "house", "daynight", "main"];
   (function next(i) {
     if (i >= files.length) return;
     var s = document.createElement("script");
