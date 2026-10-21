@@ -129,7 +129,7 @@ function limb(a, b, r0, r1, m) {
 }
 // seamless bark tube along a curve with spiralling furrows (2026-10-21: chained cylinders looked like snapped tofu)
 var barkVM = toonMat(0xffffff); barkVM.vertexColors = true;
-var barkRidgeC = new THREE.Color(lc(0xeef1f8)), barkGrooveC = new THREE.Color(lc(0x8f9bb5));
+var barkRidgeC = new THREE.Color(lc(0xeef1f8)), barkGrooveC = new THREE.Color(lc(0xc3cbdc));
 function barkTube(pts, r0, r1, depth, N, M, seed, flare) {
   var cv = new THREE.CatmullRomCurve3(pts), fr = cv.computeFrenetFrames(N, false), pos = [], col = [], idx = [], c = new THREE.Color(), k = seed || 0;
   for (var i = 0; i <= N; i++) {
