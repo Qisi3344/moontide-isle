@@ -21,9 +21,10 @@ if (typeof pier !== "undefined") pier.visible = false;
 var plinth = new THREE.Group(); plinth.position.copy(YC); scene.add(plinth);
 var pTop = new THREE.Mesh(new THREE.CylinderGeometry(YR, YR - 0.05, 0.14, 48), toonMat(0x77b58a));
 pTop.position.y = -0.07; plinth.add(pTop);
-var pRock = new THREE.Mesh(rockGeo(1, 9.3, 1, 0.9), rockVM);
-pRock.scale.set(YR * 0.98, 0.95, YR * 0.98); pRock.position.y = -0.62; pRock.rotation.x = Math.PI; plinth.add(pRock);
-var pTip = new THREE.Mesh(rockGeo(0.5, 2.1, 1.4), rockVM); pTip.position.y = -1.35; pTip.rotation.x = Math.PI; plinth.add(pTip);
+var pRock = new THREE.Mesh(rockGeo(1, 9.3, 0.9, 0.25), rockVM);
+pRock.geometry.computeBoundingBox();
+pRock.scale.set(YR * 0.97, 1, YR * 0.97); pRock.position.y = -0.13 - pRock.geometry.boundingBox.max.y; plinth.add(pRock);
+var pTip = new THREE.Mesh(rockGeo(0.5, 2.1, 1.3), rockVM); pTip.position.y = pRock.position.y - 0.75; plinth.add(pTip);
 
 // ---- camera: orbit around the house, closer, and allowed to look from the side ----
 TARGET.set(CX + 0.05, HC + 0.55, 0.02);
