@@ -61,9 +61,12 @@ bal.add(mesh(new THREE.BoxGeometry(0.16, 0.035, 0.42), hTrimM, 0.08, 0, 0));
 bal.add(mesh(new THREE.BoxGeometry(0.03, 0.02, 0.42), hTrimM, 0.15, 0.13, 0));
 for (var bi = 0; bi < 7; bi++) bal.add(mesh(new THREE.BoxGeometry(0.018, 0.11, 0.018), hTrimM, 0.15, 0.07, -0.18 + bi * 0.06));
 [-0.15, 0.15].forEach(function (z) { bal.add(mesh(new THREE.BoxGeometry(0.05, 0.08, 0.04), hTrimM, 0.03, -0.05, z)); }); // corbels
+[-0.2, 0.2].forEach(function (z) { // side railings back to the wall
+  bal.add(mesh(new THREE.BoxGeometry(0.16, 0.02, 0.03), hTrimM, 0.075, 0.13, z));
+  [0.035, 0.09].forEach(function (x) { bal.add(mesh(new THREE.BoxGeometry(0.018, 0.11, 0.018), hTrimM, x, 0.07, z)); });
+});
 // side windows
 archWindow(house, 0, 0.66, MW / 2 + 0.002, 0.16, 0.24).rotation.y = 0;
-archWindow(house, 0, 0.66, -MW / 2 - 0.002, 0.16, 0.24).rotation.y = Math.PI;
 
 // ---- lower wing with the small dome (toward -z) ----
 var WW = 0.56, WD = 0.62, WH = 0.56, WZ = -(MW / 2 + WW / 2 - 0.02);
@@ -72,8 +75,6 @@ house.add(mesh(new THREE.BoxGeometry(WD, WH, WW), hWallM, -0.04, 0.08 + WH / 2, 
 house.add(mesh(new THREE.BoxGeometry(WD + 0.06, 0.045, WW + 0.06), hTrimM, -0.04, 0.08 + WH, WZ));
 dome(house, -0.04, 0.08 + WH + 0.02, WZ, 0.24);
 archWindow(house, WD / 2 - 0.04 + 0.002, 0.16, WZ, 0.28, 0.32);
-// little chimney
-house.add(mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.16, 8), hTrimM, -0.25, 0.08 + WH + 0.08, WZ - 0.15));
 
 // ---- front steps with faint blue edge lights ----
 [0, 1].forEach(function (k) {
@@ -89,9 +90,41 @@ hLantern.add(mesh(new THREE.BoxGeometry(0.035, 0.05, 0.035), hWinM, 0, 0, 0));
 hLantern.add(mesh(new THREE.ConeGeometry(0.03, 0.025, 4), hIronM, 0, 0.037, 0));
 var hLight = new THREE.PointLight(lc(0xffb867), 0, 2.2, 2); hLight.position.set(FX + 0.35, 0.55, 0); house.add(hLight);
 
-// ---- hanging moon-grass pot under the balcony + a low rounded-stone garden wall ----
-var pot = makeGrassTuft(77, 16, 2); pot.scale.setScalar(0.34); pot.position.set(FX + 0.09, 0.15, -0.36); house.add(pot);
-house.add(mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.08, 10), hTrimM, FX + 0.09, 0.11, -0.36)); // planter by the window
+// ---- hanging spider plant (吊兰) under the balcony corner + a low rounded-stone garden wall ----
+var hPlantM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, side: THREE.DoubleSide });
+function droopLeaf(a, len, up, w) { // a ribbon that arcs up-and-out from the pot rim, then droops down
+  var seg = 8, pos = [], col = [], idx = [], cA = Math.cos(a), sA = Math.sin(a), c = new THREE.Color();
+  for (var i = 0; i <= seg; i++) {
+    var t = i / seg, r = 0.02 + len * t, y = up * Math.sin(t * Math.PI * 0.9) - len * 0.9 * t * t, ww = w * (1 - t * 0.85);
+    var x = cA * r, z = sA * r, px = -sA * ww, pz = cA * ww;
+    pos.push(x - px, y, z - pz, x + px, y, z + pz);
+    c.copy(lc(0x6f9fd8)).lerp(lc(0xf2f7ff), t); col.push(c.r, c.g, c.b, c.r, c.g, c.b);
+    if (i < seg) { var k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return new THREE.Mesh(g, hPlantM);
+}
+var hanger = new THREE.Group(); hanger.position.set(FX + 0.11, 0.42, -0.15); house.add(hanger);
+var potM = mat(0xe3e8f2);
+var hPot = mesh(new THREE.CylinderGeometry(0.05, 0.032, 0.05, 12), potM, 0, 0, 0); hanger.add(hPot);
+var potRim = mesh(new THREE.TorusGeometry(0.05, 0.006, 4, 16), hTrimM, 0, 0.025, 0); potRim.rotation.x = Math.PI / 2; hanger.add(potRim);
+for (var ci = 0; ci < 3; ci++) { // three thin cords up to the balcony slab
+  var ca = ci / 3 * Math.PI * 2, cord = mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.19, 3), hIronM, Math.cos(ca) * 0.024, 0.115, Math.sin(ca) * 0.024);
+  cord.rotation.z = -Math.cos(ca) * 0.24; cord.rotation.x = Math.sin(ca) * 0.24; hanger.add(cord);
+}
+for (var li = 0; li < 14; li++) {
+  var la = li / 14 * Math.PI * 2 + Math.sin(li * 2.3) * 0.2;
+  var lf = droopLeaf(la, 0.07 + (li % 3) * 0.02, 0.05 + (li % 2) * 0.02, 0.008); lf.position.y = 0.02; hanger.add(lf);
+}
+[[0.6, 0.15], [2.6, 0.2], [4.4, 0.12]].forEach(function (r, k) { // runners trailing down with baby plantlets
+  var len = r[1], rx = Math.cos(r[0]) * 0.05, rz = Math.sin(r[0]) * 0.05;
+  var run = mesh(new THREE.CylinderGeometry(0.0025, 0.0025, len, 3), hPlantM, rx, -len / 2, rz); hanger.add(run);
+  var baby = new THREE.Group(); baby.position.set(rx, -len, rz); hanger.add(baby);
+  for (var b = 0; b < 6; b++) baby.add(droopLeaf(b / 6 * Math.PI * 2 + k, 0.03, 0.025, 0.005));
+});
 for (var wi = 0; wi < 9; wi++) {
   var wa = -1.2 + wi * 0.13, wr = 0.95;
   if (Math.abs(wa) < 0.32) continue;
@@ -165,6 +198,7 @@ function updateHouse(t, n) {
   hStepGlowM.opacity = lerp(0.2, 0.85, n);
   hLight.intensity = n * 1.1;
   hCrystal.rotation.y = t * 0.6 * MM;
+  hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
   hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
 }
 if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
