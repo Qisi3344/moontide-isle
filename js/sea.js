@@ -7,7 +7,7 @@ bed.rotation.x = -Math.PI / 2; bed.position.y = -1.28; scene.add(bed);
 var rip = []; for (var r = 0; r < 6; r++) rip.push(new THREE.Vector4(0, 0, -99, 0));
 var seaU = {
   uTime: timeU, uNight: nightU, uRip: { value: rip }, uWave: { value: reduce ? 0.35 : 1 },
-  uSun: { value: SUN_DIR.clone() }, uMoonSky: { value: MOON_SKY }, uFog: { value: DAY.bot.clone() }, uSky: { value: DAY.top.clone() },
+  uSun: { value: SUN_DIR.clone() }, uFog: { value: DAY.bot.clone() }, uSky: { value: DAY.top.clone() },
   // pre-blend colors so the sea over the sand reads mint #7FD8CB near shore, #3FA6BC outside
   uShallow: { value: lc(0x4fe0e0) }, uDeep: { value: lc(0x1f63c0) }
 };
@@ -38,9 +38,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " w.y+=h; vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }"
   ].join("\n"),
   fragmentShader: [
-    "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep,uMoonSky; varying vec3 vW; varying vec3 vN;",
-    "float gh(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }",
-    "float gn(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f); return mix(mix(gh(i),gh(i+vec2(1.,0.)),f.x),mix(gh(i+vec2(0.,1.)),gh(i+1.),f.x),f.y); }",
+    "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep; varying vec3 vW; varying vec3 vN;",
     "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
     "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
     " float s=max(0.,-inside(vW.xz)-0.12);",
@@ -48,7 +46,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " vec3 c=mix(uShallow,uDeep,smoothstep(0.15,2.2,sd)); c=mix(c,vec3(0.008,0.0497,0.2542),smoothstep(4.,18.,sd)*0.75);",
     " float dif=max(dot(n,uSun),0.);",
     " c*=(0.62+0.38*dif)*mix(vec3(1.),vec3(0.18,0.23,0.56),uNight);",
-    " vec3 hv=normalize(uSun+v); float nh=max(dot(n,hv),0.); float sp=(pow(nh,110.)*1.5+pow(nh,14.)*0.18)*(1.-uNight); // night: no broad glare, the moon path below instead",
+    " vec3 hv=normalize(uSun+v); float sp=pow(max(dot(n,hv),0.),110.)*1.5+pow(max(dot(n,hv),0.),14.)*0.18;",
     " float fr=pow(1.-max(dot(n,v),0.),3.);",
     " c+=fr*mix(0.15,0.3,uNight)*mix(uSky,vec3(0.5,0.65,1.),uNight);",
     " float wob=sin(atan(vW.z,vW.x)*14.+uTime*1.4)*0.08;",
@@ -57,13 +55,6 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
     " c+=vec3(1.)*sp*mix(1.,0.7,uNight);",
     " float a=mix(0.78,0.97,smoothstep(0.,3.,s)); a=max(a,foam*0.5); a=max(a,min(sp,1.));",
-    // moonlight path: a narrow column of broken glitter on the water, from the camera toward the moon's bearing
-    " vec3 toP=vW-cameraPosition; float dist=length(toP.xz); float al=dot(toP.xz/max(dist,0.001),normalize(uMoonSky.xz));",
-    " float mcol=smoothstep(cos(0.11),cos(0.02),al);",
-    " float g1=gn(vW.xz*3.2+vec2(uTime*0.45,-uTime*0.3)), g2=gn(vW.xz*6.5-vec2(uTime*0.35,uTime*0.5));",
-    " float spark=smoothstep(0.5,0.85,g1*0.55+g2*0.45);",
-    " float mp=mcol*(0.12+1.1*spark)*smoothstep(5.,14.,dist)*uNight;",
-    " c+=vec3(0.82,0.9,1.)*mp*0.55; a=max(a,min(mp*0.5,0.95));",
     " c=mix(c,uFog,smoothstep(22.,38.,r)); a*=1.-smoothstep(28.,41.,r);",
     " gl_FragColor=vec4(c,a);",
     "#include <encodings_fragment>",
