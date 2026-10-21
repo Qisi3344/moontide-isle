@@ -101,7 +101,7 @@ var sigilTex = (function () {
 })();
 var sigilM = new THREE.MeshBasicMaterial({ map: sigilTex, color: lc(0xc4f4ff), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
 var sigil = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), sigilM);
-sigil.rotation.x = -Math.PI / 2; sigil.position.set(3.15, -0.95, 0); sigil.renderOrder = 1; magicG.add(sigil);
+sigil.rotation.x = -Math.PI / 2; sigil.position.set(2.4, -0.9, 0); sigil.renderOrder = 1; magicG.add(sigil);
 
 // ---- night jellyfish ----
 var jellyCols = [0xf7b6d2, 0xa9c8f5, 0xa6eedc];
