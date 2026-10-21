@@ -27,7 +27,7 @@ pRock.scale.set(YR * 0.97, 1, YR * 0.97); pRock.position.y = -0.13 - pRock.geome
 var pTip = new THREE.Mesh(rockGeo(0.5, 2.1, 1.3), rockVM); pTip.position.y = pRock.position.y - 0.75; plinth.add(pTip);
 
 // ---- camera: orbit around the house, closer, and allowed to look from the side ----
-TARGET.set(CX + 0.05, HC + 0.55, 0.02);
+TARGET.set(CX + 0.05, HC + 0.85, 0.02); // raised for the big tree
 controls.target.copy(TARGET);
 controls.minPolarAngle = THREE.MathUtils.degToRad(15);
 controls.maxPolarAngle = THREE.MathUtils.degToRad(84);
@@ -37,7 +37,7 @@ fit = function () {
   renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   var vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
-  baseDist = Math.max(2.3 / Math.tan(hf / 2), 2.0 / Math.tan(vf / 2));
+  baseDist = Math.max(2.3 / Math.tan(hf / 2), 2.25 / Math.tan(vf / 2));
   controls.minDistance = baseDist * 0.4; controls.maxDistance = baseDist * 1.5;
   scene.fog.near = 40; scene.fog.far = 160;
 };
