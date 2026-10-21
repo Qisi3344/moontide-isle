@@ -112,7 +112,7 @@ var moonBoat = new THREE.Group(), boatClothM, boatSail;
   var em = mesh(crescentGeo, runeM, 0.055, 0.21, 0.042); em.scale.setScalar(0.3); moonBoat.add(em);
   var glow = mesh(new THREE.PlaneGeometry(0.7, 0.45), lampHaloM, 0, 0.005, 0); glow.rotation.x = -Math.PI / 2; moonBoat.add(glow);
 })();
-moonBoat.scale.setScalar(1.5); moonBoat.position.set(PX1 - 0.5, -0.15, -(PW / 2 + 0.42)); moonBoat.rotation.y = -0.35; // right side of the pier as seen from the default view pier.add(moonBoat);
+moonBoat.scale.setScalar(1.5); moonBoat.position.set(PX1 - 0.5, -0.15, -(PW / 2 + 0.42)); moonBoat.rotation.y = -0.35; pier.add(moonBoat); // right side of the pier as seen from the default view
 var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.position.set(PX1 - 0.12, PY + 0.2, PW / 2 - 0.1); pier.add(pierLight);
 
 // ---- lamps by the clearing (flanking its lagoon side) ----
