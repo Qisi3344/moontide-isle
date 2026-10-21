@@ -10,6 +10,7 @@ function fit() {
   baseDist = Math.max(6.4 / Math.tan(hf / 2), 7.5 / Math.tan(vf / 2));
   controls.minDistance = baseDist * 0.6; controls.maxDistance = baseDist * 1.3;
   scene.fog.near = baseDist + 25; scene.fog.far = baseDist + 110;
+  placeMoon();
 }
 fit();
 var sph = new THREE.Spherical(baseDist, THREE.MathUtils.degToRad(56), THREE.MathUtils.degToRad(62));
@@ -38,7 +39,6 @@ renderer.setAnimationLoop(function () {
     nightT = nightTarget > nightT ? Math.min(nightTarget, nightT + step) : Math.max(nightTarget, nightT - step);
     applyNight(nightT * nightT * (3 - 2 * nightT));
   }
-  moon.lookAt(camera.position);
   controls.update();
   updateSpots(timeU.value, nightU.value);
   updateMagic(dt, timeU.value, nightU.value);
