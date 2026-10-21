@@ -19,22 +19,81 @@ function dotMat(hex, size) {
 function rnd(a, b) { return a + Math.random() * (b - a); }
 
 // ---- floating rock islets ----
-var fRockM = mat(0xaab6d0), fGrassM = mat(0x6fae82), fBushM = moonLeafM[1];
+var fCapM = toonMat(0xffffff); fCapM.vertexColors = true; fCapM.side = THREE.DoubleSide;
+function fNoise(x, z, k) { return Math.sin(x * 7.3 + k) * Math.cos(z * 6.1 - k * 0.7) + 0.6 * Math.sin((x + z) * 13.7 + k * 2.1) + 0.35 * Math.sin(x * 23.1 - z * 19.3 + k); }
+function floatRockGeo(s, k) {
+  var g = new THREE.IcosahedronGeometry(s, 2), p = g.attributes.position, col = [], c = new THREE.Color();
+  var cT = lc(0xdfe4ee), cM = lc(0xb7c3d9), cB = lc(0x8d9dc0);
+  for (var i = 0; i < p.count; i++) {
+    var x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    if (y > 0) y *= 0.3;
+    else {
+      var j = 1 + 0.16 * Math.sin(x * 8.1 / s + z * 5.3 / s + k) * Math.cos(y * 6.7 / s + k);
+      var tp = 1 + 0.45 * y / s; x *= j * tp; z *= j * tp; y *= 1.55 * j;
+    }
+    p.setXYZ(i, x, y, z);
+    var t = (y / s + 1.55) / 1.85;
+    if (t > 0.7) c.copy(cM).lerp(cT, (t - 0.7) / 0.3); else c.copy(cB).lerp(cM, Math.max(0, t) / 0.7);
+    col.push(c.r, c.g, c.b);
+  }
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  smoothWalls(g);
+  return g;
+}
+function floatCapGeo(s, k) {
+  var RINGS = 6, SEG = 28, pos = [], col = [], idx = [], c = new THREE.Color();
+  var gD = lc(0x5f9f76), gM = lc(0x7fbb8f), gL = lc(0xa9d1a0), bare = lc(0xccd5e4), gEdge = lc(0x5a9570);
+  pos.push(0, 0.3 * s + 0.012 * s, 0); col.push(gM.r, gM.g, gM.b);
+  for (var r = 1; r <= RINGS + 1; r++) {
+    for (var a = 0; a < SEG; a++) {
+      var th = a / SEG * Math.PI * 2, cx = Math.cos(th), cz = Math.sin(th), x, y, z;
+      if (r <= RINGS) {
+        var f = r / RINGS * 0.99; x = cx * f * s; z = cz * f * s;
+        y = 0.3 * s * Math.sqrt(Math.max(0, 1 - f * f)) + 0.012 * s;
+        var n = fNoise(x / s, z / s, k);
+        if (n < -1.05 && r < RINGS) c.copy(bare); else if (n < -0.2) c.copy(gL).lerp(gM, (n + 1.05) / 0.85); else if (n < 0.7) c.copy(gM).lerp(gD, (n + 0.2) / 0.9); else c.copy(gD);
+      } else { // fringe dripping over the rim, jagged lengths
+        var drip = 0.05 + 0.09 * (0.5 + 0.5 * Math.sin(a * 2.7 + k)) * (a % 2 ? 0.55 : 1);
+        x = cx * s * 1.02; z = cz * s * 1.02; y = -drip * s; c.copy(gEdge);
+      }
+      pos.push(x, y, z); col.push(c.r, c.g, c.b);
+    }
+  }
+  for (a = 0; a < SEG; a++) idx.push(0, 1 + (a + 1) % SEG, 1 + a);
+  for (r = 1; r <= RINGS; r++) for (a = 0; a < SEG; a++) {
+    var i0 = 1 + (r - 1) * SEG + a, i1 = 1 + (r - 1) * SEG + (a + 1) % SEG, j0 = i0 + SEG, j1 = i1 + SEG;
+    idx.push(i0, i1, j0, i1, j1, j0);
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
 var fRocks = [];
 [[200, 7.0, 3.2, 0.55], [262, 6.6, 4.6, 0.42], [128, 7.4, 2.6, 0.5], [20, 7.8, 4.0, 0.38]].forEach(function (d, i) {
   var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
-  var rg = new THREE.IcosahedronGeometry(s, 0), rp = rg.attributes.position;
-  for (var k = 0; k < rp.count; k++) {
-    // displace by position (not vertex index) so shared corners move together and faces stay closed
-    var x = rp.getX(k), y = rp.getY(k), z = rp.getZ(k);
-    rp.setY(k, y > 0 ? y * 0.35 : y * 1.25);              // flat top, pointy bottom
-    rp.setX(k, x * (1 + 0.12 * Math.sin(x * 7.1 / s + z * 4.3 / s + i)));
+  // 2026-10-21 redo: was a faceted dark-blue shard with a flat green lid. Now a smooth stone body (moon-white top
+  // fading to soft blue-grey, tapering down) wearing a patchy grass cap: dense/mid/light greens with a few bare
+  // pale-stone spots, and a jagged grass fringe dripping over the rim.
+  g.add(new THREE.Mesh(floatRockGeo(s, i), rockVM));
+  g.add(new THREE.Mesh(floatCapGeo(s, i), fCapM));
+  var topY = function (r) { return 0.3 * s * Math.sqrt(Math.max(0, 1 - r * r)) + 0.012 * s; };
+  var tf = makeGrassTuft(i + 21, 20, 3); tf.scale.setScalar(s * 0.7); tf.position.set(s * 0.35, topY(0.36), -s * 0.2); g.add(tf);
+  for (var pb = 0; pb < 2; pb++) {
+    var pr = 0.5 + pb * 0.15, pa = i * 2.1 + pb * 2.6, st = new THREE.Mesh(rockGeo(s * (0.09 - pb * 0.025), i * 3 + pb, 0.6), rockVM);
+    st.position.set(Math.cos(pa) * pr * s, topY(pr) - 0.01, Math.sin(pa) * pr * s); g.add(st);
   }
-  rg.computeVertexNormals();
-  g.add(mesh(rg, fRockM));
-  var cap = mesh(new THREE.CylinderGeometry(s * 0.92, s * 0.8, s * 0.16, 7), fGrassM, 0, s * 0.3, 0); g.add(cap);
-  if (i % 2 === 0) { var tf = makeGrassTuft(i + 21, 22, 2); tf.scale.setScalar(s * 0.9); tf.position.set(s * 0.25, s * 0.38, -s * 0.15); g.add(tf); }
-  if (i === 1) { var mt = makeMoonTree(5, 0.36 * 1.0); mt.scale.setScalar(0.36); mt.position.set(-s * 0.2, s * 0.36, 0); g.add(mt); }
+  if (i !== 1) { // two little mushrooms, pink + blue
+    for (var mi = 0; mi < 2; mi++) {
+      var ma = i * 1.3 + mi * 0.5 + 3, mr = 0.55, ms = mi ? 0.55 : 0.8, mh = 0.07 * ms + 0.02, mg = new THREE.Group();
+      mg.position.set(Math.cos(ma) * mr * s, topY(mr) - 0.005, Math.sin(ma) * mr * s);
+      var mst = new THREE.Mesh(new THREE.CylinderGeometry(0.011 * ms + 0.004, 0.015 * ms + 0.005, mh, 6), shroomStemM); mst.position.y = mh / 2; mg.add(mst);
+      var mcp = new THREE.Mesh(shroomCapG, mi ? shroomCapM2 : shroomCapM); mcp.position.y = mh - 0.004; mcp.scale.set(ms, ms * 0.7, ms); mg.add(mcp);
+      g.add(mg);
+    }
+  }
+  if (i === 1) { var mt = makeMoonTree(5, 0.36 * 1.0); mt.scale.setScalar(0.36); mt.position.set(-s * 0.2, topY(0.2), 0); g.add(mt); }
   g.position.set(q[0], d[2], q[1]);
   // drifting sparkles under each rock
   var n = 10, pos = new Float32Array(n * 3), life = new Float32Array(n);
