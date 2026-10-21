@@ -1,7 +1,7 @@
 /* 月汐小岛 · sea.js — 果冻海、海床、戳一戳的涟漪 */
 "use strict";
 // ---------- jelly sea + seabed ----------
-var bed = new THREE.Mesh(new THREE.CircleGeometry(90, 48), new THREE.MeshStandardMaterial({ color: lc(0xc9b48f), roughness: 1 }));
+var bed = new THREE.Mesh(new THREE.CircleGeometry(90, 48), new THREE.MeshStandardMaterial({ color: lc(0xc4cbd8), roughness: 1 }));
 bed.rotation.x = -Math.PI / 2; bed.position.y = -1.28; scene.add(bed);
 
 var rip = []; for (var r = 0; r < 6; r++) rip.push(new THREE.Vector4(0, 0, -99, 0));
@@ -9,7 +9,7 @@ var seaU = {
   uTime: timeU, uNight: nightU, uRip: { value: rip }, uWave: { value: reduce ? 0.35 : 1 },
   uSun: { value: SUN_DIR.clone() }, uFog: { value: DAY.bot.clone() }, uSky: { value: DAY.top.clone() },
   // pre-blend colors so the sea over the sand reads mint #7FD8CB near shore, #3FA6BC outside
-  uShallow: { value: lc(0x62f0ea) }, uDeep: { value: lc(0x38b0cd) }
+  uShallow: { value: lc(0x5eeae6) }, uDeep: { value: lc(0x2c7fd2) }
 };
 var seaG = new THREE.RingGeometry(0.001, 42, 180, 90);
 (function densify() {
