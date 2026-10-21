@@ -225,6 +225,46 @@ for (var si = 0; si < 4; si++) {
 }
 clearing.visible = false; ring.visible = false;   // the patio replaces the old round paving + ring slabs
 
+// ---- big wind-swept moon tree behind the house, back-left (her sketch, 2026-10-21) ----
+// Trunk rises behind the left (+z) side, leans a little, then the crown is "blown" toward the right (-z): two long
+// near-horizontal limbs reach over both domes with flat, layered leaf pads streaming off their ends, like a
+// windswept cliff pine (迎客松-like structure) but in the island's silver-bark / blue-white leaf style.
+var windTree = new THREE.Group();
+(function () {
+  var V = THREE.Vector3;
+  function bough(pts, r0, r1) { // tapered chain of limbs along a smooth curve
+    var cv = new THREE.CatmullRomCurve3(pts), N = pts.length * 3, prev = cv.getPoint(0);
+    for (var i = 1; i <= N; i++) {
+      var q = cv.getPoint(i / N), ra = r0 + (r1 - r0) * (i - 1) / N, rb = r0 + (r1 - r0) * i / N;
+      windTree.add(limb(prev, q, ra, rb, moonBarkM)); prev = q;
+    }
+    return cv;
+  }
+  var trunk = bough([new V(0, 0, 0), new V(0.04, 0.4, 0.1), new V(0.0, 0.85, 0.07), new V(-0.03, 1.25, -0.1),
+    new V(0.0, 1.58, -0.45), new V(0.03, 1.8, -0.9), new V(0.06, 1.92, -1.4)], 0.12, 0.035);
+  var low = bough([new V(-0.02, 1.2, -0.06), new V(0.08, 1.42, -0.45), new V(0.16, 1.52, -0.9), new V(0.2, 1.55, -1.25)], 0.06, 0.025);
+  bough([new V(0.0, 0.95, 0.06), new V(-0.06, 1.12, 0.2), new V(-0.1, 1.24, 0.3)], 0.045, 0.02); // little back-left twig
+  for (var r = 0; r < 5; r++) { // flared roots
+    var ra = r / 5 * Math.PI * 2 + 0.4;
+    windTree.add(limb(new V(0, 0.16, 0), new V(Math.cos(ra) * 0.26, -0.02, Math.sin(ra) * 0.26), 0.06, 0.018, moonBarkM));
+  }
+  // flat leaf pads: each pad is a set of blobs squashed vertically, trailing off toward -z (the wind side)
+  function pad(cx, cy, cz, len, wid, n, seed) {
+    var blobs = [], k;
+    for (k = 0; k < 5; k++) blobs.push([cx + (k % 2 ? 0.06 : -0.05), cy + (k === 2 ? 0.04 : 0), cz - len * k / 4, wid * (1 - 0.12 * Math.abs(k - 1.5))]);
+    var m = leafCards(blobs, [cx, cy - 0.3, cz - len / 2], 1, seed, n);
+    var gp = new THREE.Group(); gp.add(m);
+    gp.position.set(0, cy, 0); m.position.y = -cy; gp.scale.y = 0.5;
+    windTree.add(gp);
+  }
+  pad(0.06, 1.98, -0.85, 0.85, 0.3, 300, 41);  // top pad along the main limb end
+  pad(0.0, 2.1, -0.55, 0.55, 0.24, 160, 43);   // little upper layer
+  pad(0.2, 1.6, -0.85, 0.55, 0.26, 200, 47);   // lower pad on the second limb
+  pad(-0.1, 1.3, 0.3, 0.12, 0.17, 70, 49);     // small tuft on the back-left twig
+})();
+windTree.position.set(-0.52, 0.02, 0.72);
+house.add(windTree);
+
 house.position.set(CX - 0.18, HC, 0.05);
 scene.add(house);
 // tap the house just like the clearing
