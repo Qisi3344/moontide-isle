@@ -66,8 +66,8 @@ function tierShape(T, k) {
 var TIER_COL = [
   { top: 0xe8e3d9, hi: 0xe2d9c8, lo: 0xc2b49c }, // sand
   { top: 0xd8dbe6, hi: 0xd2d8e6, lo: 0xa6b0c9 }, // white stone ledge
-  { top: 0x8db9c6, hi: 0xcfd6e5, lo: 0xa3adc6 }, // moon-grass terrace (sea-glass blue, was green till 2026-10-21), stone wall
-  { top: 0x8db9c6, hi: 0xd0d7e6, lo: 0xa5afc8 }  // top terrace, stone wall
+  { top: 0xb3d8c8, hi: 0xcfd6e5, lo: 0xa3adc6 }, // moon-grass terrace (sea-glass blue, was green till 2026-10-21), stone wall
+  { top: 0xb3d8c8, hi: 0xd0d7e6, lo: 0xa5afc8 }  // top terrace, stone wall
 ];
 // Underwater foundation (2026-10-21: she saw the straight pulled-down walls through the water and wanted it to tuck
 // inward like the underside of a floating-style island). Below the waterline every vertex slides inward along the
@@ -147,7 +147,8 @@ TIERS.forEach(function (T, k) {
 // moon-grass turf overlay (2026-10-21): the extruded tops have no inner vertices, so a clipped grid lies on each
 // grass terrace carrying patchy dense/mid/light sea-glass blues plus a silver "moon frost" band along the edges.
 (function () {
-  var gD = lc(0x6c9fb6), gM = lc(0x8db9c6), gL = lc(0xb2d4dc), fr = lc(0xe8f1f6), S = 0.08, c = new THREE.Color();
+  var gD = lc(0x9fcfc0), gM = lc(0xb3d8c8), gL = lc(0xb4dcd9), fr = lc(0xe6f3ef), // soft mint/aqua (her swatch, 2026-10-21)
+      S = 0.08, c = new THREE.Color();
   function nz(x, z) { return Math.sin(x * 2.3 + 1.1) * Math.cos(z * 2.9 - 0.4) + 0.6 * Math.sin((x - z) * 5.7 + 2) + 0.35 * Math.sin(x * 11.3 + z * 9.1); }
   [2, 3].forEach(function (k) {
     var T = TIERS[k], pos = [], col = [], idx = [], id = {}, n = 0, N = Math.ceil(12 / S);
