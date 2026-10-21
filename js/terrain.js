@@ -94,6 +94,31 @@ function tuckUnderwater(g, baseY) {
   }
   pos.needsUpdate = true;
 }
+// ExtrudeGeometry is non-indexed, so its walls come out flat-faceted; with toon banding every facet showed as a
+// vertical crease (2026-10-21, 'paper-box fold lines'). Re-derive face normals, then average normals of coincident
+// vertices whose faces are within ~60°, keeping the top/wall edge crisp.
+function smoothWalls(g) {
+  g.computeVertexNormals();
+  var pos = g.attributes.position, nor = g.attributes.normal, map = {}, i, k, key;
+  for (i = 0; i < pos.count; i++) {
+    key = Math.round(pos.getX(i) * 1000) + "," + Math.round(pos.getY(i) * 1000) + "," + Math.round(pos.getZ(i) * 1000);
+    (map[key] = map[key] || []).push(i);
+  }
+  var out = new Float32Array(pos.count * 3);
+  for (key in map) {
+    var L = map[key];
+    for (i = 0; i < L.length; i++) {
+      var a = L[i], ax = nor.getX(a), ay = nor.getY(a), az = nor.getZ(a), sx = 0, sy = 0, sz = 0;
+      for (k = 0; k < L.length; k++) {
+        var b = L[k], bx = nor.getX(b), by = nor.getY(b), bz = nor.getZ(b);
+        if (ax * bx + ay * by + az * bz > 0.5) { sx += bx; sy += by; sz += bz; }
+      }
+      var l = Math.hypot(sx, sy, sz) || 1;
+      out[a * 3] = sx / l; out[a * 3 + 1] = sy / l; out[a * 3 + 2] = sz / l;
+    }
+  }
+  g.setAttribute("normal", new THREE.BufferAttribute(out, 3));
+}
 var islandMesh = new THREE.Group(); scene.add(islandMesh);
 TIERS.forEach(function (T, k) {
   var bottom = k === 0 ? -0.66 : TIERS[k - 1].top - 0.08, bt = k === 0 ? 0.12 : 0.07, bs = k === 0 ? 0.28 : 0.07;
@@ -103,6 +128,7 @@ TIERS.forEach(function (T, k) {
   });
   g.rotateX(-Math.PI / 2);
   if (k === 0) tuckUnderwater(g, bottom + bt);
+  smoothWalls(g);
   var C = TIER_COL[k], cTop = new THREE.Color(lc(C.top)), cHi = new THREE.Color(lc(C.hi)), cLo = new THREE.Color(lc(C.lo));
   var pos = g.attributes.position, nor = g.attributes.normal, col = new Float32Array(pos.count * 3), c = new THREE.Color();
   var y0 = (k === 0 ? -0.3 : bottom) - bottom - bt, y1 = T.top - bottom - bt;
