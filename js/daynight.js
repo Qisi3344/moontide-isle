@@ -11,7 +11,7 @@ function applyNight(e) {
   seaU.uSky.value.copy(skyU.uTop.value);
   hemi.color.copy(DAY.hemi).lerp(NIGHT.hemi, e);
   hemi.groundColor.copy(DAY.ground).lerp(NIGHT.ground, e);
-  hemi.intensity = lerp(0.5, 0.3, e); // softer, warmer-blue shade (2026-10-21) // 2026-10-21: day was washing the white trees/house/lamps out
+  hemi.intensity = lerp(0.5, 0.42, e); // night: sea-blue bounce lifts the cliff backs // softer, warmer-blue shade (2026-10-21) // 2026-10-21: day was washing the white trees/house/lamps out
   sun.color.copy(DAY.dir).lerp(NIGHT.dir, e);
   sun.intensity = lerp(1.1, 0.35, e);
   renderer.toneMappingExposure = lerp(0.8, 0.9, e);
@@ -20,5 +20,6 @@ function applyNight(e) {
   sun.position.copy(tmpV).multiplyScalar(20);
   seaU.uSun.value.copy(tmpV);
   tmpC.copy(DAY.top).lerp(NIGHT.top, e).convertLinearToSRGB();
+  cloudM.color.copy(lc(0xfff0e4)).lerp(lc(0x5a6ea8), e); cloudM.opacity = lerp(0.85, 0.32, e);
   document.body.style.background = "#" + tmpC.getHexString();
 }
