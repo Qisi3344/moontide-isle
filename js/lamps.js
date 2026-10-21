@@ -69,14 +69,19 @@ pier.position.set(Math.cos(PTH) * PD0, 0.16, Math.sin(PTH) * PD0);
 pier.rotation.y = -PTH;
 lampsG.add(pier);
 // 2026-10-21: two tall pillar lamps on the pier looked odd; one small night light at the end instead
-var nightLampM = glowMat(0xeaf4ff, 0xbfe3ff), nightLamp = new THREE.Group();
-nightLamp.add(mesh(new THREE.BoxGeometry(0.085, 0.03, 0.085), lampTrimM, 0, 0.015, 0));
-nightLamp.add(mesh(new THREE.BoxGeometry(0.045, 0.17, 0.045), lampStoneM, 0, 0.115, 0));
-nightLamp.add(mesh(new THREE.BoxGeometry(0.07, 0.02, 0.07), lampTrimM, 0, 0.21, 0));
-nightLamp.add(mesh(new THREE.SphereGeometry(0.04, 12, 8), nightLampM, 0, 0.255, 0));
-var nlMoon = mesh(crescentGeo, moonGlowM, 0, 0.33, 0); nlMoon.scale.setScalar(0.35); nightLamp.add(nlMoon);
-var nlHalo = mesh(new THREE.PlaneGeometry(0.34, 0.34), lampHaloM, 0, 0.26, 0); nightLamp.add(nlHalo);
-nightLamp.position.set(PX1 - 0.08, PY + 0.018, PW / 2 - 0.07); pier.add(nightLamp);
+var nightLampM = glowMat(0xeaf4ff, 0xbfe3ff), nightLamp = new THREE.Group(), lanMetalM = mat(0xaab4c8);
+// a little hand-carried lantern sitting on the planks: metal base + cap, glowing glass, a crescent inside, carry handle on top
+nightLamp.add(mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.02, 12), lanMetalM, 0, 0.01, 0));
+var lanGlass = mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.085, 12), nightLampM, 0, 0.0625, 0);
+lanGlass.material = nightLampM.clone(); lanGlass.material.transparent = true; lanGlass.material.opacity = 0.75; nightLamp.add(lanGlass);
+for (var lp = 0; lp < 4; lp++) { var la = lp * Math.PI / 2 + Math.PI / 4; nightLamp.add(mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.09, 4), lanMetalM, Math.cos(la) * 0.041, 0.0625, Math.sin(la) * 0.041)); }
+nightLamp.add(mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.012, 12), lanMetalM, 0, 0.111, 0));
+nightLamp.add(mesh(new THREE.ConeGeometry(0.04, 0.035, 12), lanMetalM, 0, 0.134, 0));
+nightLamp.add(mesh(new THREE.SphereGeometry(0.008, 6, 4), lanMetalM, 0, 0.154, 0));
+var lanHandle = mesh(new THREE.TorusGeometry(0.032, 0.004, 5, 14, Math.PI), lanMetalM, 0, 0.15, 0); nightLamp.add(lanHandle);
+var nlMoon = mesh(crescentGeo, moonGlowM, 0, 0.055, 0); nlMoon.scale.setScalar(0.22); nightLamp.add(nlMoon);
+var nlHalo = mesh(new THREE.PlaneGeometry(0.3, 0.3), lampHaloM, 0, 0.065, 0); nightLamp.add(nlHalo);
+nightLamp.position.set(PX1 - 0.12, PY + 0.018, PW / 2 - 0.1); nightLamp.rotation.y = 0.5; pier.add(nightLamp);
 
 // a little moon boat beside the pier, folded like a paper boat, tips curling up like a crescent
 var paperM = toonMat(0xf3f6fc); paperM.side = THREE.DoubleSide; paperM.emissive = lc(0xcfe6ff); paperM.emissiveIntensity = 0;
@@ -100,7 +105,7 @@ var moonBoat = new THREE.Group();
   var glow = mesh(new THREE.PlaneGeometry(0.7, 0.45), lampHaloM, 0, 0.005, 0); glow.rotation.x = -Math.PI / 2; moonBoat.add(glow);
 })();
 moonBoat.position.set(PX1 - 0.45, -0.15, PW / 2 + 0.32); moonBoat.rotation.y = 0.35; pier.add(moonBoat);
-var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.position.set(PX1 - 0.08, PY + 0.35, PW / 2 - 0.07); pier.add(pierLight);
+var pierLight = new THREE.PointLight(lc(0xcfe6ff), 0, 1.6, 2); pierLight.position.set(PX1 - 0.12, PY + 0.2, PW / 2 - 0.1); pier.add(pierLight);
 
 // ---- lamps by the clearing (flanking its lagoon side) ----
 [-0.75, 0.75].forEach(function (a) {
@@ -131,7 +136,7 @@ function updateLamps(t, n) {
   });
   pierLight.intensity = n * 0.6;
   nightLampM.emissiveIntensity = lerp(0.3, 1.6, n); paperM.emissiveIntensity = n * 0.35;
-  nlMoon.rotation.y = t * 0.5 * MM; nlMoon.position.y = 0.33 + Math.sin(t * 1.2) * 0.01 * MM;
+  nlMoon.rotation.y = t * 0.5 * MM; lanGlass.material.emissiveIntensity = lerp(0.3, 1.8, n);
   nlHalo.quaternion.copy(camera.quaternion); nightLamp.getWorldQuaternion(tmpQ); nlHalo.quaternion.premultiply(tmpQ.invert());
   moonBoat.position.y = -0.15 + Math.sin(t * 1.3) * 0.012 * MM;
   moonBoat.rotation.z = Math.sin(t * 0.9) * 0.05 * MM; moonBoat.rotation.x = Math.sin(t * 1.1 + 1) * 0.03 * MM;
