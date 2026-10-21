@@ -19,7 +19,7 @@ function dotMat(hex, size) {
 function rnd(a, b) { return a + Math.random() * (b - a); }
 
 // ---- floating rock islets ----
-var fRockM = mat(0xaeb1c3), fGrassM = mat(0x6fae82), fBushM = mat(0x2f5d6e);
+var fRockM = mat(0xaeb1c3), fGrassM = mat(0x6fae82), fBushM = moonLeafM[1];
 var fRocks = [];
 [[200, 7.0, 3.2, 0.55], [262, 6.6, 4.6, 0.42], [128, 7.4, 2.6, 0.5], [20, 7.8, 4.0, 0.38]].forEach(function (d, i) {
   var q = polar(d[0], d[1]), g = new THREE.Group(), s = d[3];
@@ -34,13 +34,7 @@ var fRocks = [];
   g.add(mesh(rg, fRockM));
   var cap = mesh(new THREE.CylinderGeometry(s * 0.92, s * 0.8, s * 0.16, 7), fGrassM, 0, s * 0.3, 0); g.add(cap);
   if (i % 2 === 0) g.add(mesh(new THREE.IcosahedronGeometry(s * 0.32, 0), fBushM, s * 0.25, s * 0.55, -s * 0.15));
-  if (i === 1) {
-    g.add(mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.5, 5), barkM, -s * 0.2, s * 0.6, 0));
-    for (var l = 0; l < 5; l++) {
-      var lf = mesh(new THREE.ConeGeometry(0.07, 0.42, 3), fBushM, -s * 0.2, s * 0.6 + 0.27, 0);
-      lf.rotation.set(1.15, l / 5 * Math.PI * 2, 0, "YXZ"); lf.translateY(0.18); g.add(lf);
-    }
-  }
+  if (i === 1) { var mt = makeMoonTree(5); mt.scale.setScalar(0.36); mt.position.set(-s * 0.2, s * 0.36, 0); g.add(mt); }
   g.position.set(q[0], d[2], q[1]);
   // drifting sparkles under each rock
   var n = 10, pos = new Float32Array(n * 3), life = new Float32Array(n);
