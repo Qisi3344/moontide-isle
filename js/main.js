@@ -42,6 +42,7 @@ renderer.setAnimationLoop(function () {
   controls.update();
   updateSpots(timeU.value, nightU.value);
   updateMagic(dt, timeU.value, nightU.value);
+  updateLamps(timeU.value, nightU.value);
   renderer.render(scene, camera);
 });
 
@@ -55,5 +56,6 @@ window.Island = {
     owl: owlPerch,
     house: new THREE.Vector3(CX + 0.8, HC, 0.4)
   },
-  magic: { rocks: fRocks, crystal: crystal, jellies: jellies }
+  magic: { rocks: fRocks, crystal: crystal, jellies: jellies },
+  lamps: { group: lampsG, pier: pier }
 };
