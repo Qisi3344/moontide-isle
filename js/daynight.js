@@ -11,9 +11,9 @@ function applyNight(e) {
   seaU.uSky.value.copy(skyU.uTop.value);
   hemi.color.copy(DAY.hemi).lerp(NIGHT.hemi, e);
   hemi.groundColor.copy(DAY.ground).lerp(NIGHT.ground, e);
-  hemi.intensity = lerp(0.4, 0.3, e); // 2026-10-21: day was washing the white trees/house/lamps out
+  hemi.intensity = lerp(0.5, 0.3, e); // softer, warmer-blue shade (2026-10-21) // 2026-10-21: day was washing the white trees/house/lamps out
   sun.color.copy(DAY.dir).lerp(NIGHT.dir, e);
-  sun.intensity = lerp(1.2, 0.35, e);
+  sun.intensity = lerp(1.1, 0.35, e);
   renderer.toneMappingExposure = lerp(0.8, 0.9, e);
   rimU.value = lerp(0.1, 0.22, e);
   tmpV.copy(SUN_DIR).lerp(MOON_DIR, e).normalize();
