@@ -75,14 +75,14 @@ var pebbles = [];
 var wolfSpot = addSpot(rock, "小灰狼的看月石", null);
 
 // 澜's perch tree, on the slope beside the clearing
-var tree = new THREE.Group(), treeM = mat(0x5f9c7c);
-tree.add(mesh(new THREE.CylinderGeometry(0.09, 0.14, 1.2, 7), barkM, 0, 0.6, 0));
-var branch = mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.72, 6), barkM, 0.44, 0.72, 0);
+var tree = new THREE.Group(), treeM = mat(0xcfe1f2), owlBarkM = mat(0x8c8598); // moon-blue canopy, silver-grey bark
+tree.add(mesh(new THREE.CylinderGeometry(0.09, 0.14, 1.2, 7), owlBarkM, 0, 0.6, 0));
+var branch = mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.72, 6), owlBarkM, 0.44, 0.72, 0);
 branch.rotation.z = -Math.PI / 2 + 0.08; tree.add(branch);
 [[0, 1.5, 0, 0.52], [0.32, 1.32, 0.15, 0.38], [-0.3, 1.3, -0.12, 0.4]].forEach(function (b) {
   tree.add(mesh(new THREE.IcosahedronGeometry(b[3], 1), treeM, b[0], b[1], b[2]));
 });
-var hole = mesh(new THREE.CircleGeometry(0.05, 8), new THREE.MeshBasicMaterial({ color: lc(0x2e221b) }), 0, 0.45, 0.126);
+var hole = mesh(new THREE.CircleGeometry(0.05, 8), new THREE.MeshBasicMaterial({ color: lc(0x3a3f55) }), 0, 0.45, 0.126);
 hole.scale.y = 1.3; tree.add(hole);
 var lantern = new THREE.Group(), lanternM = glowMat(0xf2b35e);
 lantern.position.set(0.7, 0.71, 0); tree.add(lantern);
