@@ -111,12 +111,6 @@ var spout = mesh(new THREE.CylinderGeometry(0.004, 0.008, 0.04, 5), hTrimM, 0.03
 var kHandle = mesh(new THREE.TorusGeometry(0.022, 0.004, 4, 10, Math.PI), hIronM, 0, 0.24, 0); stove.add(kHandle);
 var stoveLight = new THREE.PointLight(lc(0xffa85a), 0, 0.9, 2); stoveLight.position.set(0.12, 0.15, 0); stove.add(stoveLight);
 
-// ---- moon-grass pots on both sides of the steps ----
-[[FX + 0.2, -0.0], [FX + 0.2, 0.42]].forEach(function (q, k) {
-  house.add(mesh(new THREE.CylinderGeometry(0.05, 0.038, 0.07, 12), mat(0xe3e8f2), q[0], 0.035, q[1]));
-  var tuft = makeGrassTuft(91 + k * 7, 12, 2); tuft.scale.setScalar(0.22); tuft.position.set(q[0], 0.07, q[1]); house.add(tuft);
-});
-
 // ---- hanging spider plant (吊兰) under the balcony corner + a low rounded-stone garden wall ----
 var hPlantM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, side: THREE.DoubleSide });
 function droopLeaf(a, len, up, w) { // a ribbon that arcs up-and-out from the pot rim, then droops down
@@ -152,6 +146,33 @@ for (var li = 0; li < 14; li++) {
   var baby = new THREE.Group(); baby.position.set(rx, -len, rz); hanger.add(baby);
   for (var b = 0; b < 6; b++) baby.add(droopLeaf(b / 6 * Math.PI * 2 + k, 0.03, 0.025, 0.005));
 });
+// ---- moon-grass pots on both sides of the steps (she asked to make them nicer, 2026-10-21):
+// a rounded moon-white glazed pot with a pale-blue band, a little saucer, warm soil, a full arching
+// rosette and three glowing moon-tide buds on thin stems ----
+var mpPotM = mat(0xf1f4fa), mpBandM = mat(0x9dbde6), mpSoilM = mat(0xb59a82);
+var mpBudM = new THREE.MeshBasicMaterial({ color: lc(0xcfe8ff), transparent: true, opacity: 0.75 });
+var mpBuds = [];
+var potProfile = [[0, 0], [0.032, 0], [0.042, 0.012], [0.05, 0.035], [0.05, 0.055], [0.044, 0.07], [0.047, 0.078], [0.05, 0.082]]
+  .map(function (v) { return new THREE.Vector2(v[0], v[1]); });
+[[FX + 0.2, -0.0], [FX + 0.2, 0.42]].forEach(function (q, k) {
+  var g = new THREE.Group(); g.position.set(q[0], 0, q[1]); g.rotation.y = k * 1.3; house.add(g);
+  g.add(mesh(new THREE.CylinderGeometry(0.056, 0.05, 0.008, 16), hTrimM, 0, 0.004, 0)); // saucer
+  g.add(mesh(new THREE.LatheGeometry(potProfile, 18), mpPotM, 0, 0.008, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.0505, 0.0505, 0.012, 18, 1, true), mpBandM, 0, 0.053, 0)); // glazed band
+  var rim = mesh(new THREE.TorusGeometry(0.049, 0.005, 5, 18), mpPotM, 0, 0.09, 0); rim.rotation.x = Math.PI / 2; g.add(rim);
+  var soil = mesh(new THREE.CircleGeometry(0.045, 16), mpSoilM, 0, 0.084, 0); soil.rotation.x = -Math.PI / 2; g.add(soil);
+  for (var i = 0; i < 16; i++) { // arching moon-grass rosette
+    var a = i / 16 * Math.PI * 2 + Math.sin(i * 1.7 + k) * 0.25;
+    var lf = droopLeaf(a, 0.05 + (i % 3) * 0.018, 0.06 + (i % 2) * 0.03, 0.007); lf.position.y = 0.084; g.add(lf);
+  }
+  for (var b = 0; b < 3; b++) { // glowing buds on slim stems
+    var ba = b / 3 * Math.PI * 2 + k, bh = 0.15 + b * 0.025, bx = Math.cos(ba) * 0.012, bz = Math.sin(ba) * 0.012;
+    var stem = mesh(new THREE.CylinderGeometry(0.0018, 0.0022, bh - 0.08, 4), mpBandM, bx, 0.08 + (bh - 0.08) / 2, bz);
+    stem.rotation.z = -Math.cos(ba) * 0.12; stem.rotation.x = Math.sin(ba) * 0.12; g.add(stem);
+    var bud = mesh(new THREE.SphereGeometry(0.011, 8, 6), mpBudM, bx * 2.2, bh, bz * 2.2); bud.scale.y = 1.4; g.add(bud); mpBuds.push(bud);
+  }
+});
+
 for (var wi = 0; wi < 9; wi++) {
   var wa = -1.2 + wi * 0.13, wr = 0.95;
   if (Math.abs(wa) < 0.32) continue;
@@ -227,6 +248,7 @@ function updateHouse(t, n) {
   hLight.intensity = n * 1.1;
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
+  mpBudM.opacity = lerp(0.6, 1, n); mpBuds.forEach(function (b, i) { b.position.y += 0; b.rotation.z = Math.sin(t * 1.1 + i) * 0.15 * MM; });
   hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
 }
 if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
