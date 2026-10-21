@@ -12,7 +12,7 @@ var CX = -3.05, CR = 1.15;
 // o = inset from the open-sea edge, n = inset from the lagoon edge, A = half-width in angle around
 // the west (θ = π), top = height of the walkable top.
 var TIERS = [
-  { o: -0.3, n: -0.6, A: 9, top: 0.16, wob: 0 },  // sand rim (the beach), full crescent; 0.3 wider on the sea side, 0.6 into the lagoon (she wanted it wider, 2026-10-21)
+  { o: 0.0, n: 0.0, A: 9, top: 0.16, wob: 0 },    // sand rim (the beach), full crescent
   { o: 0.05, n: 0.5, A: 1.95, top: 0.72, wob: 1 }, // low white-stone ledge
   { o: 0.3, n: 0.68, A: 1.38, top: 1.22, wob: 1 }, // middle grass terrace
   { o: 0.52, n: 0.76, A: 0.86, top: 1.72, wob: 1 } // top terrace with the clearing
