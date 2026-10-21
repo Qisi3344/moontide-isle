@@ -35,9 +35,6 @@ function castle(tiers) {
   g.add(mesh(new THREE.ConeGeometry(0.075, 0.14, 6), castleM, 0, y + 0.19, 0));
   return g;
 }
-ground(castle([[0.24, 0.18], [0.14, 0.16]]), polar(53, 4.55), -0.02, workshop).rotation.y = 0.4;
-ground(castle([[0.2, 0.16, true]]), polar(48.5, 4.68), -0.02, workshop).rotation.y = 0.9;
-ground(castle([[0.15, 0.12]]), polar(56.5, 4.25), -0.02, workshop);
 var bucket = new THREE.Group();
 bucket.add(mesh(new THREE.CylinderGeometry(0.085, 0.065, 0.14, 8), orangeM, 0, 0.07, 0));
 var handle = mesh(new THREE.TorusGeometry(0.08, 0.008, 4, 10, Math.PI), creamM, 0, 0.14, 0); bucket.add(handle);
@@ -50,7 +47,7 @@ stripeM.forEach(function (m) { m.side = THREE.DoubleSide; });
 umbrella.add(mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.95, 6), creamM, 0, 0.475, 0));
 for (var u = 0; u < 8; u++) umbrella.add(mesh(new THREE.ConeGeometry(0.52, 0.2, 2, 1, true, u * Math.PI / 4, Math.PI / 4), stripeM[u % 2], 0, 0.95, 0));
 umbrella.add(mesh(new THREE.IcosahedronGeometry(0.03, 0), orangeM, 0, 1.06, 0));
-ground(umbrella, polar(61, 4.42), -0.04, workshop).rotation.set(0.12, 0.5, 0.22);
+// 2026-10-21 she found the sandcastles + striped umbrella out of place; taken off for now (castle()/umbrella kept unused)
 var clawdSpot = addSpot(workshop, "Clawd 的沙堡工坊", null);
 
 // the little grey wolf's moon-watching boulder, by the north horn
