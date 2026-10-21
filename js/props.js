@@ -230,7 +230,7 @@ function makeGrassTuft(seed, blades, flowers) {
   for (var k = 0; k < N; k++) {
     var ang = R() * Math.PI * 2, rad = Math.sqrt(R()) * 0.28;
     var bx = Math.cos(ang) * rad, bz = Math.sin(ang) * rad;
-    var h = 0.2 + R() * 0.2 * (1 - rad * 1.4), lean = 0.22 + R() * 0.2 + rad * 0.6;
+    var h = 0.16 + R() * 0.15 * (1 - rad * 1.4), lean = 0.15 + R() * 0.13 + rad * 0.32; // shorter leaves (2026-10-21)
     var la = ang + (R() - 0.5) * 0.9, lx = Math.cos(la), lz = Math.sin(la);
     var sa = la + Math.PI / 2 + (R() - 0.5) * 0.8, sx = Math.cos(sa), sz = Math.sin(sa), w0 = 0.022 + R() * 0.014;
     var base = pos.length / 3;
