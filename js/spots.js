@@ -54,14 +54,8 @@ ground(umbrella, polar(61, 4.42), -0.04, workshop).rotation.set(0.12, 0.5, 0.22)
 var clawdSpot = addSpot(workshop, "Clawd 的沙堡工坊", null);
 
 // the little grey wolf's moon-watching boulder, by the north horn
-var rock = new THREE.Group(), bg = new THREE.IcosahedronGeometry(0.42, 1), bp = bg.attributes.position;
-for (var k = 0; k < bp.count; k++) {
-  var x = bp.getX(k), y = bp.getY(k), z = bp.getZ(k), j = 1 + Math.sin(x * 12.1 + y * 7.3 + z * 5.7) * 0.06;
-  x *= j * 1.25; z *= j * 1.05; y *= j * 0.78; if (y > 0.2) y = 0.2 + (y - 0.2) * 0.25;
-  bp.setXYZ(k, x, y, z);
-}
-bg.computeVertexNormals();
-var rockM = mat(0xb9b4ae); rockM.roughness = 0.9;
+var rock = new THREE.Group(), bg = rockGeo(0.42, 4.2, 0.62, 0.35); bg.scale(1.25, 1, 1.05);
+var rockM = rockVM;
 rock.add(mesh(bg, rockM, 0, 0.14, 0)).children[0].rotation.y = 0.7;
 var rq = polar(311, 4.5);
 ground(rock, rq, 0);
