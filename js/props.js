@@ -48,7 +48,7 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
   if (inside(q[0], q[1]) > 0.25) pine(q[0], q[1], d[2]);
 });
 // little grey sea stacks off the cliffs
-[[100, 5.6, 0.35], [150, 5.8, 0.5], [165, 5.45, 0.25], [215, 5.7, 0.42], [250, 5.55, 0.3], [70, 5.9, 0.3], [295, 5.8, 0.38]].forEach(function (d, k) {
+[[100, 5.6, 0.35], [150, 5.8, 0.5], [165, 5.45, 0.25], [215, 5.7, 0.42], [250, 5.55, 0.3], [70, 5.9, 0.3], [283, 5.8, 0.38]].forEach(function (d, k) {
   var q = polar(d[0], d[1]), sg = new THREE.DodecahedronGeometry(d[2], 0);
   var m = new THREE.Mesh(sg, stackM); m.scale.set(1, 1.5 + (k % 3) * 0.3, 0.9);
   m.position.set(q[0], -0.25 + d[2] * 0.4, q[1]); m.rotation.y = k * 1.3; props.add(m);
