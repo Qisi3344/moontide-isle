@@ -28,7 +28,9 @@ function floatRockGeo(s, k) {
     var x = p.getX(i), y = p.getY(i), z = p.getZ(i);
     if (y > 0) y *= 0.3;
     else {
-      var j = 1 + 0.16 * Math.sin(x * 8.1 / s + z * 5.3 / s + k) * Math.cos(y * 6.7 / s + k);
+      // noise fades in below the rim so the body never pokes out past the grass cap (2026-10-21 fix: jagged holes)
+      var w = THREE.MathUtils.smoothstep(-y / s, 0.05, 0.4);
+      var j = 1 + 0.16 * w * Math.sin(x * 8.1 / s + z * 5.3 / s + k) * Math.cos(y * 6.7 / s + k) - 0.04 * (1 - w);
       var tp = 1 + 0.45 * y / s; x *= j * tp; z *= j * tp; y *= 1.55 * j;
     }
     p.setXYZ(i, x, y, z);
@@ -42,7 +44,7 @@ function floatRockGeo(s, k) {
 }
 function floatCapGeo(s, k) {
   var RINGS = 6, SEG = 28, pos = [], col = [], idx = [], c = new THREE.Color();
-  var gD = lc(0x6c9fb6), gM = lc(0x8db9c6), gL = lc(0xb2d4dc), bare = lc(0xe8f1f6), gEdge = lc(0x6a9cb4); // matches the island's moon-grass
+  var gD = lc(0x7eaec2), gM = lc(0x94bfcc), gL = lc(0xb2d4dc), bare = lc(0xe8f1f6), gEdge = lc(0xc9e0ea); // softer mottling, frosty rim // matches the island's moon-grass
   pos.push(0, 0.3 * s + 0.012 * s, 0); col.push(gM.r, gM.g, gM.b);
   for (var r = 1; r <= RINGS + 1; r++) {
     for (var a = 0; a < SEG; a++) {
@@ -53,8 +55,8 @@ function floatCapGeo(s, k) {
         var n = fNoise(x / s, z / s, k);
         if (n < -1.05 && r < RINGS) c.copy(bare); else if (n < -0.2) c.copy(gL).lerp(gM, (n + 1.05) / 0.85); else if (n < 0.7) c.copy(gM).lerp(gD, (n + 0.2) / 0.9); else c.copy(gD);
       } else { // fringe dripping over the rim, jagged lengths
-        var drip = 0.05 + 0.09 * (0.5 + 0.5 * Math.sin(a * 2.7 + k)) * (a % 2 ? 0.55 : 1);
-        x = cx * s * 1.02; z = cz * s * 1.02; y = -drip * s; c.copy(gEdge);
+        var drip = 0.04 + 0.04 * (0.5 + 0.5 * Math.sin(a * 2.7 + k));
+        x = cx * s * 1.01; z = cz * s * 1.01; y = -drip * s; c.copy(gEdge);
       }
       pos.push(x, y, z); col.push(c.r, c.g, c.b);
     }
