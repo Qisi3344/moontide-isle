@@ -66,8 +66,8 @@ function tierShape(T, k) {
 var TIER_COL = [
   { top: 0xe8e3d9, hi: 0xe2d9c8, lo: 0xc2b49c }, // sand
   { top: 0xd8dbe6, hi: 0xd2d8e6, lo: 0xa6b0c9 }, // white stone ledge
-  { top: 0x77b58a, hi: 0xcfd6e5, lo: 0xa3adc6 }, // grass terrace, stone wall
-  { top: 0x6aab80, hi: 0xd0d7e6, lo: 0xa5afc8 }  // top terrace, stone wall
+  { top: 0x8db9c6, hi: 0xcfd6e5, lo: 0xa3adc6 }, // moon-grass terrace (sea-glass blue, was green till 2026-10-21), stone wall
+  { top: 0x8db9c6, hi: 0xd0d7e6, lo: 0xa5afc8 }  // top terrace, stone wall
 ];
 // Underwater foundation (2026-10-21: she saw the straight pulled-down walls through the water and wanted it to tuck
 // inward like the underside of a floating-style island). Below the waterline every vertex slides inward along the
@@ -144,6 +144,38 @@ TIERS.forEach(function (T, k) {
   m.position.y = bottom + bt;
   islandMesh.add(m);
 });
+// moon-grass turf overlay (2026-10-21): the extruded tops have no inner vertices, so a clipped grid lies on each
+// grass terrace carrying patchy dense/mid/light sea-glass blues plus a silver "moon frost" band along the edges.
+(function () {
+  var gD = lc(0x6c9fb6), gM = lc(0x8db9c6), gL = lc(0xb2d4dc), fr = lc(0xe8f1f6), S = 0.08, c = new THREE.Color();
+  function nz(x, z) { return Math.sin(x * 2.3 + 1.1) * Math.cos(z * 2.9 - 0.4) + 0.6 * Math.sin((x - z) * 5.7 + 2) + 0.35 * Math.sin(x * 11.3 + z * 9.1); }
+  [2, 3].forEach(function (k) {
+    var T = TIERS[k], pos = [], col = [], idx = [], id = {}, n = 0, N = Math.ceil(12 / S);
+    function ok(x, z) { return inTier(T, k, x, z) && (k === 3 || !inTier(TIERS[3], 3, x, z)); }
+    for (var i = 0; i <= N; i++) for (var j = 0; j <= N; j++) {
+      var x = -6 + i * S, z = -6 + j * S, inn = true, edge = false, d;
+      for (d = 0; d < 6 && inn; d++) { var a = d / 6 * 6.283; if (!ok(x + Math.cos(a) * 0.09, z + Math.sin(a) * 0.09)) inn = false; }
+      if (!inn) continue;
+      for (d = 0; d < 8; d++) { var b = d / 8 * 6.283; if (!ok(x + Math.cos(b) * 0.24, z + Math.sin(b) * 0.24)) edge = true; }
+      var v = nz(x, z);
+      if (v < -0.5) c.copy(gL).lerp(gM, (v + 1.6) / 1.1 < 0 ? 0 : (v + 1.6) / 1.1); else if (v < 0.6) c.copy(gM).lerp(gD, (v + 0.5) / 1.1); else c.copy(gD);
+      if (edge) c.lerp(fr, 0.65);
+      id[i * 10000 + j] = n++; pos.push(x, T.top + 0.003, z); col.push(c.r, c.g, c.b);
+    }
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++) {
+      var p0 = id[i * 10000 + j], p1 = id[(i + 1) * 10000 + j], p2 = id[i * 10000 + j + 1], p3 = id[(i + 1) * 10000 + j + 1];
+      if (p0 !== undefined && p1 !== undefined && p3 !== undefined) idx.push(p0, p3, p1);
+      if (p0 !== undefined && p3 !== undefined && p2 !== undefined) idx.push(p0, p2, p3);
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(new Float32Array(pos.length).map(function (_, q) { return q % 3 === 1 ? 1 : 0; }), 3));
+    g.setIndex(idx);
+    var m = toonMat(0xffffff); m.vertexColors = true; m.polygonOffset = true; m.polygonOffsetFactor = -1;
+    var turf = new THREE.Mesh(g, m); turf.receiveShadow = true; islandMesh.add(turf);
+  });
+})();
 // pale stone paving of the clearing
 var clearing = new THREE.Mesh(new THREE.CylinderGeometry(CR + 0.08, CR + 0.08, 0.03, 40), toonMat(0xe6e8ef));
 clearing.position.set(CX, HC + 0.015, 0); islandMesh.add(clearing);
