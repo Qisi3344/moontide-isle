@@ -27,15 +27,17 @@ var timeU = { value: 0 }, nightU = { value: 0 };
   })));
 })();
 
-var MOON_DIR = new THREE.Vector3(-0.55, 0.5, -0.67).normalize();
+var MOON_AZ = THREE.MathUtils.degToRad(62) + Math.PI + 0.32; // bearing in atan2(x, z) terms, ahead-left of the start view
+var MOON_EL = THREE.MathUtils.degToRad(9), MOON_LIGHT_EL = THREE.MathUtils.degToRad(38);
+var MOON_SKY = new THREE.Vector3(Math.sin(MOON_AZ) * Math.cos(MOON_EL), Math.sin(MOON_EL), Math.cos(MOON_AZ) * Math.cos(MOON_EL));
+var MOON_DIR = new THREE.Vector3(Math.sin(MOON_AZ) * Math.cos(MOON_LIGHT_EL), Math.sin(MOON_LIGHT_EL), Math.cos(MOON_AZ) * Math.cos(MOON_LIGHT_EL));
 var SUN_DIR = new THREE.Vector3(0.65, 0.6, 0.45).normalize();
-// A soft moon hanging far off in the background (she asked for a moon with a gentle glow, 2026-10-21; then said
-// it should hang fixed in the distance, not sit on the island). The camera looks down on the island so the real sky
-// is out of frame; the moon rides on the camera 60 units out (behind the whole island, in front of the far seabed),
-// near the top edge, but its bearing is fixed in the world: turning the island slides it across and off the view
-// like something far away. Pale moon-white + blue halo, no purple. Faint by day, glowing at night.
+// The moon (she asked for one with a soft glow, 2026-10-21). It hangs in a fixed spot in the sky like a skybox:
+// re-centred on the camera every frame (no parallax, never drifts with the view), a little above the horizon,
+// on bearing MOON_AZ. The night light (MOON_DIR) comes from that same bearing, higher up, so the island is lit
+// and the sea glints from the moon's side. Pale moon-white + blue halo, no purple. Faint by day, glowing at night.
 var moonU = { uNight: nightU, uTime: timeU };
-var moon = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShaderMaterial({
+var moon = new THREE.Mesh(new THREE.PlaneGeometry(72, 72), new THREE.ShaderMaterial({
   uniforms: moonU, transparent: true, depthWrite: false, fog: false,
   vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
   fragmentShader: [
@@ -57,19 +59,13 @@ var moon = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShaderMater
     "}"].join("\n")
 }));
 moon.renderOrder = 999; // drawn last: depth-tested against the island, over the far sea
-camera.add(moon); scene.add(camera);
-var MOON_AZ = THREE.MathUtils.degToRad(62) + Math.PI + 0.32, moonD = 60, moonTv = 0.4, moonTh = 0.4;
-function placeMoon() { // called from fit(): size for the screen shape
-  moonTv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); moonTh = moonTv * camera.aspect;
-  moon.scale.setScalar(Math.min(1, camera.aspect * 0.75 + 0.3) * 1.25);
+scene.add(moon);
+function placeMoon() { // called from fit(): a touch smaller on narrow phone screens
+  moon.scale.setScalar(Math.min(1, camera.aspect * 0.75 + 0.3));
 }
-function updateMoon() { // every frame: fixed world bearing, held near the top of the view
-  var dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z;
-  var viewAz = Math.atan2(dx, dz) + Math.PI, d = MOON_AZ - viewAz;
-  d = Math.atan2(Math.sin(d), Math.cos(d));
-  var x = -Math.tan(d) / moonTh; // -1..1 across the screen
-  moon.visible = Math.abs(d) < 1.3 && Math.abs(x) < 1.35;
-  moon.position.set(x * moonD * moonTh, moonD * moonTv * 0.8, -moonD);
+function updateMoon() { // every frame: same sky direction, centred on the camera
+  moon.position.copy(camera.position).addScaledVector(MOON_SKY, 250);
+  moon.lookAt(camera.position);
 }
 
 // ---------- lights ----------
