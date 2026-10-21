@@ -42,7 +42,7 @@ function floatRockGeo(s, k) {
 }
 function floatCapGeo(s, k) {
   var RINGS = 6, SEG = 28, pos = [], col = [], idx = [], c = new THREE.Color();
-  var gD = lc(0x5f9f76), gM = lc(0x7fbb8f), gL = lc(0xa9d1a0), bare = lc(0xccd5e4), gEdge = lc(0x5a9570);
+  var gD = lc(0x6c9fb6), gM = lc(0x8db9c6), gL = lc(0xb2d4dc), bare = lc(0xe8f1f6), gEdge = lc(0x6a9cb4); // matches the island's moon-grass
   pos.push(0, 0.3 * s + 0.012 * s, 0); col.push(gM.r, gM.g, gM.b);
   for (var r = 1; r <= RINGS + 1; r++) {
     for (var a = 0; a < SEG; a++) {
