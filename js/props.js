@@ -170,7 +170,9 @@ function makeMoonTree(seed, sc) {
 function blossom(x, z, sc, seed) {
   var g = makeMoonTree(seed, sc);
   g.scale.setScalar(sc); g.position.set(x, height(x, z) - 0.03, z); g.rotation.y = x * 2.3;
-  props.add(g); return g;
+  props.add(g);
+  if (seed % 2 === 0) shrooms(props, x + 0.18 * sc, z + 0.14 * sc, seed + 21, 3);
+  return g;
 }
 // moon grass tuft: long curved blue-white blades + a few glowing star flowers (replaces the old green bush balls).
 // Blades are tapered curved strips merged into one mesh; the tips sway in the vertex shader (grass trick from
@@ -197,22 +199,42 @@ var starFlowerG = (function () {
   }
   return new THREE.ShapeGeometry(sh);
 })();
+var budG = new THREE.SphereGeometry(0.024, 8, 6);
+// little glowing mushrooms tucked at stone edges and tree roots (2026-10-21, she asked for a few)
+var shroomStemM = toonMat(0xe9eef7), shroomCapM = toonMat(0xcfe9ff);
+shroomCapM.emissive = lc(0x7fd0ff); shroomCapM.emissiveIntensity = 0.1;
+var shroomCapG = new THREE.SphereGeometry(0.05, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+function shrooms(parent, x, z, seed, n) {
+  var rs = seed * 4111 + 7; function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+  var y0 = height(x, z);
+  for (var i = 0; i < (n || 3); i++) {
+    var a = R() * 6.28, r = 0.03 + R() * 0.09, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+    if (Math.abs(height(px, pz) - y0) > 0.02 || inside(px, pz) < 0.2) continue;
+    var s = (i ? 0.45 + R() * 0.35 : 0.85), hh = 0.07 * s + 0.02, g = new THREE.Group();
+    g.position.set(px, y0 - 0.005, pz); g.rotation.set((R() - 0.5) * 0.35, R() * 6, (R() - 0.5) * 0.35);
+    var st = new THREE.Mesh(new THREE.CylinderGeometry(0.011 * s + 0.004, 0.015 * s + 0.005, hh, 6), shroomStemM); st.position.y = hh / 2; g.add(st);
+    var cp = new THREE.Mesh(shroomCapG, shroomCapM); cp.position.y = hh - 0.004; cp.scale.set(s, s * 0.7, s); g.add(cp);
+    parent.add(g);
+  }
+}
 function makeGrassTuft(seed, blades, flowers) {
   var rs = (seed || 1) * 7919 + 13;
   function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
   var pos = [], nor = [], uv = [], col = [], idx = [], SEG = 4;
-  var cBase = lc(0x5f86c0), cMid = lc(0xa9c8ee), cTip = lc(0xf3f8ff), tmp = new THREE.Color();
+  // 2026-10-21: the upright dark-rooted blades read as grey weeds in shade; now the island's own 月汐草 (moon-tide grass):
+  // light blue-white ribbons that arch up and droop over, like the potted ones by the door, with glowing buds.
+  var cBase = lc(0x9dbde6), cMid = lc(0xc8dcf3), cTip = lc(0xf3f8ff), tmp = new THREE.Color();
   var g = new THREE.Group(), N = blades || 30;
   for (var k = 0; k < N; k++) {
     var ang = R() * Math.PI * 2, rad = Math.sqrt(R()) * 0.28;
     var bx = Math.cos(ang) * rad, bz = Math.sin(ang) * rad;
-    var h = 0.32 + R() * 0.32 * (1 - rad * 1.6), lean = 0.12 + R() * 0.22 + rad * 0.5;
+    var h = 0.2 + R() * 0.2 * (1 - rad * 1.4), lean = 0.22 + R() * 0.2 + rad * 0.6;
     var la = ang + (R() - 0.5) * 0.9, lx = Math.cos(la), lz = Math.sin(la);
     var sa = la + Math.PI / 2 + (R() - 0.5) * 0.8, sx = Math.cos(sa), sz = Math.sin(sa), w0 = 0.022 + R() * 0.014;
     var base = pos.length / 3;
     for (var j = 0; j <= SEG; j++) {
-      var t = j / SEG, w = w0 * (1 - t * 0.92), off = lean * t * t;
-      var cx = bx + lx * off, cy = h * t * (1 - 0.18 * t * lean), cz = bz + lz * off;
+      var t = j / SEG, w = w0 * (1 - t * 0.85), off = lean * t;
+      var cx = bx + lx * off, cy = h * Math.sin(t * Math.PI * 0.9) - lean * 0.45 * t * t + 0.01, cz = bz + lz * off;
       if (t < 0.5) tmp.copy(cBase).lerp(cMid, t * 2); else tmp.copy(cMid).lerp(cTip, (t - 0.5) * 2);
       var nx = lx * 0.45, nz = lz * 0.45, nl = Math.sqrt(nx * nx + 1 + nz * nz);
       [-1, 1].forEach(function (sd) {
@@ -230,14 +252,18 @@ function makeGrassTuft(seed, blades, flowers) {
   bg.setIndex(idx);
   g.add(new THREE.Mesh(bg, grassBladeM));
   var F = flowers === undefined ? 4 : flowers;
-  for (var f = 0; f < F; f++) { // glowing star flowers on thin stems
+  for (var f = 0; f < F; f++) { // glowing moon-tide buds on thin stems (a star flower now and then)
     var fa = R() * Math.PI * 2, fr = Math.sqrt(R()) * 0.22, fh = 0.22 + R() * 0.3;
     var fx = Math.cos(fa) * fr, fz = Math.sin(fa) * fr;
     var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.007, fh, 4), grassBladeM);
     stem.position.set(fx, fh / 2, fz); g.add(stem);
-    var fl = new THREE.Mesh(starFlowerG, grassFlowerM);
-    fl.position.set(fx, fh + 0.005, fz); fl.rotation.set(-Math.PI / 2 + (R() - 0.5) * 0.9, 0, R() * 6.3);
-    fl.scale.setScalar(0.8 + R() * 0.5); g.add(fl);
+    if (f % 3 === 2) {
+      var fl = new THREE.Mesh(starFlowerG, grassFlowerM);
+      fl.position.set(fx, fh + 0.005, fz); fl.rotation.set(-Math.PI / 2 + (R() - 0.5) * 0.9, 0, R() * 6.3);
+      fl.scale.setScalar(0.8 + R() * 0.5); g.add(fl);
+    } else {
+      var bud = new THREE.Mesh(budG, grassFlowerM); bud.position.set(fx, fh + 0.01, fz); bud.scale.set(1, 1.45, 1); g.add(bud);
+    }
   }
   return g;
 }
@@ -265,6 +291,7 @@ function bush(x, z, sc, seed) {
   g.scale.setScalar(sc * 1.15); g.position.set(x, f[2] - 0.02, z); g.rotation.y = x * 3;
   props.add(g);
   pebbleCluster(props, x, z, sc, (seed || 1) + 4);
+  if ((seed || 1) % 2) shrooms(props, x + 0.42 * sc, z - 0.2 * sc, (seed || 1) + 9, 3);
 }
 function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos(a) * r, -Math.sin(a) * r]; }
 // (175° tree removed to make room for the wind-swept tree behind the house)
