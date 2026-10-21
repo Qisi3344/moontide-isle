@@ -81,7 +81,7 @@ leafCardM.onBeforeCompile = function (sh) {
     "outgoingLight += vec3(0.8, 0.88, 1.0) * smoothstep(0.62, 0.8, rimF) * uRim;\n#include <output_fragment>");
 };
 moonLeafM.push(leafCardM);
-var leafTones = [lc(0xe6eef9), lc(0xcfdff3), lc(0xb4cff0), lc(0x9dbde6)];
+var leafTones = [lc(0xc6e4ff), lc(0xa6d2fa), lc(0x88bcf0), lc(0x6fa8e4)]; // ice-blue crystal canopy like her reference (2026-10-21; was near-white)
 // canopy blob with normals pointing out from canopy centre c (blob centre b, radius r)
 function canopyBlob(b, r, c, m) {
   var g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3();
