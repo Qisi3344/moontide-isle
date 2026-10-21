@@ -240,13 +240,40 @@ var windTree = new THREE.Group(), wtSparkM;
     }
     return cv;
   }
-  // trunk: two intertwined strands make it read thick and twisted
-  var tp = [new V(0, 0, 0), new V(0.02, 0.38, 0.12), new V(0.0, 0.78, 0.2), new V(-0.02, 1.12, 0.12), new V(0.0, 1.38, -0.1), new V(0.02, 1.55, -0.38)];
-  var trunk = bough(tp, 0.2, 0.08, 18);
-  bough(tp.map(function (p, k) { return new V(p.x + Math.sin(k * 1.3) * 0.06, p.y, p.z + Math.cos(k * 1.3) * 0.05); }), 0.12, 0.05, 18);
-  for (var r = 0; r < 7; r++) { // big flared roots
-    var ra = r / 7 * Math.PI * 2 + 0.3, rl = 0.3 + (r % 3) * 0.08;
-    bough([new V(0, 0.3, 0), new V(Math.cos(ra) * rl * 0.45, 0.1, Math.sin(ra) * rl * 0.45), new V(Math.cos(ra) * rl, -0.02, Math.sin(ra) * rl)], 0.09, 0.02, 4);
+  // trunk: one thick ancient tube with deep spiralling furrows (ridges + grooves, darker in the grooves), wide at
+  // the foot and flaring into buttress roots — 2026-10-21 she said the first try looked like a coconut palm.
+  var tp = [new V(0, -0.04, 0), new V(0.02, 0.35, 0.1), new V(0.0, 0.75, 0.18), new V(-0.02, 1.1, 0.1), new V(0.0, 1.36, -0.12), new V(0.02, 1.55, -0.42)];
+  var trunk = new THREE.CatmullRomCurve3(tp);
+  (function () {
+    var N = 44, M = 30, fr = trunk.computeFrenetFrames(N, false), pos = [], col = [], idx = [];
+    var cRidge = new THREE.Color(lc(0xeef1f8)), cGroove = new THREE.Color(lc(0x8f9bb5)), c = new THREE.Color();
+    for (var i = 0; i <= N; i++) {
+      var t = i / N, P = trunk.getPoint(t), Nn = fr.normals[i], B = fr.binormals[i];
+      var rad = 0.13 + 0.12 * Math.pow(1 - t, 2.2) + 0.16 * Math.pow(Math.max(0, 1 - t * 6), 2); // thick, flared foot
+      rad *= t > 0.85 ? 1 - (t - 0.85) * 2.4 : 1;
+      for (var j = 0; j <= M; j++) {
+        var th = j / M * Math.PI * 2, tw = th + t * 2.6; // furrows spiral up the trunk
+        var fl = Math.sin(tw * 7) * 0.5 + Math.sin(tw * 3 + 1.1) * 0.35 + Math.sin(tw * 11 + t * 9) * 0.15; // -1..1
+        var buttress = Math.max(0, 1 - t * 5) * Math.max(0, Math.sin(th * 5 + 0.4)) * 0.22; // root buttresses at the foot
+        var rr = rad * (1 + 0.16 * fl) + buttress, cx = Math.cos(th) * rr, cy = Math.sin(th) * rr;
+        pos.push(P.x + Nn.x * cx + B.x * cy, P.y + Nn.y * cx + B.y * cy, P.z + Nn.z * cx + B.z * cy);
+        c.copy(cGroove).lerp(cRidge, THREE.MathUtils.smoothstep(fl, -0.6, 0.5)); col.push(c.r, c.g, c.b);
+      }
+    }
+    for (i = 0; i < N; i++) for (j = 0; j < M; j++) {
+      var a0 = i * (M + 1) + j, a1 = a0 + M + 1;
+      idx.push(a0, a1, a0 + 1, a1, a1 + 1, a0 + 1);
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    var m = toonMat(0xffffff); m.vertexColors = true; m.side = THREE.DoubleSide;
+    windTree.add(new THREE.Mesh(g, m));
+  })();
+  for (var r = 0; r < 6; r++) { // gnarled surface roots creeping out from the buttresses
+    var ra = r / 6 * Math.PI * 2 + 0.6, rl = 0.42 + (r % 3) * 0.1;
+    bough([new V(Math.cos(ra) * 0.2, 0.08, Math.sin(ra) * 0.2), new V(Math.cos(ra + 0.2) * rl * 0.6, 0.03, Math.sin(ra + 0.2) * rl * 0.6), new V(Math.cos(ra) * rl, -0.03, Math.sin(ra) * rl)], 0.075, 0.02, 5);
   }
   // limbs fanning right from the bend, each splitting into twigs; tips feed the crown
   var tips = [];
@@ -259,7 +286,7 @@ var windTree = new THREE.Group(), wtSparkM;
   ];
   limbs.forEach(function (L, k) {
     var a = trunk.getPoint(L[0]), b = L[1], c = L[2];
-    bough([a, b, c], 0.065, 0.022, 7);
+    bough([a, b, c], 0.085, 0.024, 7);
     [[0.12, 0.08, -0.15], [-0.1, 0.12, 0.05], [0.04, -0.04, -0.3]].forEach(function (o, j) {
       var s = b.clone().lerp(c, 0.55), e = c.clone().add(new V(o[0], o[1], o[2] * (k === 4 ? -0.6 : 1)));
       bough([s, s.clone().lerp(e, 0.5).add(new V(0, 0.05, 0)), e], 0.025, 0.01, 3);
@@ -286,7 +313,7 @@ var windTree = new THREE.Group(), wtSparkM;
   wtSparkM = new THREE.PointsMaterial({ color: lc(0x8fd0ff), size: 0.045, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending });
   windTree.add(new THREE.Points(sg, wtSparkM));
 })();
-windTree.position.set(-0.5, 0.02, 0.74);
+windTree.position.set(-0.62, 0.02, 0.82);
 house.add(windTree);
 
 house.position.set(CX - 0.18, HC, 0.05);
