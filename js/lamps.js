@@ -131,7 +131,7 @@ var clearLight = new THREE.PointLight(lc(0xffb867), 0, 2.8, 2); clearLight.posit
 function updateLamps(t, n) {
   leafTimeU.value = t * MM; grassTimeU.value = t * MM;
   grassBladeM.emissiveIntensity = n * 0.3; grassFlowerM.emissiveIntensity = lerp(0.15, 1.6, n);
-  moonGlowM.emissiveIntensity = lerp(0.12, 1.05, n); shroomCapM.emissiveIntensity = lerp(0.1, 1.3, n);
+  moonGlowM.emissiveIntensity = lerp(0.12, 1.05, n); shroomCapM.emissiveIntensity = shroomCapM2.emissiveIntensity = lerp(0.1, 1.1, n); starPinkM.emissiveIntensity = lerp(0.1, 0.9, n);
   runeM.opacity = lerp(0.35, 0.95, n);
   moonLeafM.forEach(function (m, k) { m.emissiveIntensity = n * (k ? 0.35 : 0.25); });
   lampHaloM.opacity = n * 0.32;
