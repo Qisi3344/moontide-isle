@@ -207,6 +207,7 @@ var xiaoG = (function () {
       ask_walk: "你为什么横着走路呀？"
     },
     menu: [["gday", "1、聊聊天气怎么样？"], ["knot", "2、你身上的结是什么？"]],
+    faceRoot: function () { return bTorso; }, faceScale: M.height, faceOffY: TORSO_Y, // torso bone, mesh units
     emo: { hello: ["blush"], gday: ["blush", "heart"], gnight: ["star"], knot: ["blush", "star"], ask_wday: ["star"], ask_walk: ["sweat"] },
     face: (function () { // cheeks just outside the knot, on the head's curve; in "height = 1" units
       var x = 0.95, y = -0.35, nz = 1 - Math.pow((x - 0.03) / 1.42, 2) - Math.pow(y / 1.25, 2), z = 1.08 * Math.sqrt(Math.max(nz, 0.05));
