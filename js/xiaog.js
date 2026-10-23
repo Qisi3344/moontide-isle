@@ -220,14 +220,14 @@ var xiaoG = (function () {
   // ---- who am I steering? Genshin-style party list, top-right: tap a portrait to take control ----
   (function () {
     var bar = document.createElement("div");
-    bar.style.cssText = "position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(70px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px;z-index:5;align-items:flex-end";
+    bar.style.cssText = "position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px;z-index:5;align-items:flex-end";
     var rows = {};
     [["clawd", "Clawd", "🦀", "#f6c9b4"], ["g", "小G", "☁️", "#dfe9f6"]].forEach(function (o) {
       var r = document.createElement("button"); r.type = "button"; r.setAttribute("aria-label", "操纵 " + o[1]);
-      r.style.cssText = "display:flex;align-items:center;gap:8px;border:none;background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px 14px 14px 999px;padding:4px 10px 4px 4px;cursor:pointer;font:inherit;color:#4a5674;transition:transform .2s,background .2s,box-shadow .2s;flex-direction:row-reverse";
+      r.style.cssText = "display:flex;align-items:center;gap:5px;border:none;background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px 12px 12px 999px;padding:3px 8px 3px 3px;cursor:pointer;font:inherit;color:#4a5674;transition:transform .2s,background .2s,box-shadow .2s;flex-direction:row-reverse";
       var av = document.createElement("span"); av.textContent = o[2];
-      av.style.cssText = "width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:" + o[3] + ";box-shadow:inset 0 0 0 2px rgba(255,255,255,0.9);transition:box-shadow .2s";
-      var nm = document.createElement("span"); nm.textContent = o[1]; nm.style.cssText = "font-size:13px;font-weight:600;padding-left:6px";
+      av.style.cssText = "width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:" + o[3] + ";box-shadow:inset 0 0 0 2px rgba(255,255,255,0.9);transition:box-shadow .2s";
+      var nm = document.createElement("span"); nm.textContent = o[1]; nm.style.cssText = "font-size:11px;font-weight:600;padding-left:4px";
       r.appendChild(av); r.appendChild(nm);
       r.addEventListener("click", function () { pick(o[0]); });
       bar.appendChild(r); rows[o[0]] = { r: r, av: av };
@@ -237,10 +237,10 @@ var xiaoG = (function () {
       Object.keys(rows).forEach(function (k) {
         var on = k === n, R = rows[k];
         R.r.setAttribute("aria-pressed", on ? "true" : "false");
-        R.r.style.transform = on ? "translateX(-6px) scale(1.06)" : "none";
+        R.r.style.transform = on ? "translateX(-4px)" : "none";
         R.r.style.background = on ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)";
         R.r.style.boxShadow = on ? "0 4px 14px rgba(120,150,190,0.35)" : "none";
-        R.av.style.boxShadow = on ? "inset 0 0 0 2px #fff, 0 0 0 3px #8fb8d8" : "inset 0 0 0 2px rgba(255,255,255,0.9)";
+        R.av.style.boxShadow = on ? "inset 0 0 0 2px #fff, 0 0 0 2px #8fb8d8" : "inset 0 0 0 2px rgba(255,255,255,0.9)";
       });
     }
     ["pointerdown", "pointerup", "touchstart", "click"].forEach(function (ev) { bar.addEventListener(ev, function (e) { e.stopPropagation(); }); });
