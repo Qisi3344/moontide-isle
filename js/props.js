@@ -378,3 +378,90 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
     }
   });
 })();
+
+// ---------- beach life (2026-10-23, she asked): milky-lavender little real crabs + pale-yellow star shells ----------
+var beachCrabs = [];
+(function beachLife() {
+  var rs = 777; function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+  var C = [2.4, 0];
+  function onBeach(a, rr) { var x = C[0] + Math.cos(a) * rr, z = C[1] + Math.sin(a) * rr; return [x, z]; }
+  function dry(x, z) { var d = beachD(x, z); return d > 0.3 && !inTier(TIERS[1], 1, x, z) && ledgeNear(x, z, d) < 0.15; }
+  // crab: oval shell, two claws, six legs, eye stalks with deep-indigo eyes (never black)
+  var shellM = mat(0xcbb8e8), shellHiM = mat(0xdccdf2), legM = mat(0xb9a5dc), eyeM = mat(0x3b3f7a);
+  function makeCrab() {
+    var g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+    var sh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 8), shellM); sh.scale.set(1.25, 0.5, 0.9); sh.position.y = 0.035; sh.castShadow = true; body.add(sh);
+    var top = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), shellHiM); top.scale.set(1.25, 0.45, 0.85); top.position.y = 0.05; body.add(top);
+    var claws = [];
+    [-1, 1].forEach(function (s) {
+      var arm = new THREE.Group(); arm.position.set(s * 0.045, 0.035, 0.035); body.add(arm);
+      var up = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.008, 0.035, 6), legM); up.rotation.set(Math.PI / 2.6, 0, -s * 0.6); up.position.set(s * 0.01, 0, 0.012); arm.add(up);
+      var cl = new THREE.Group(); cl.position.set(s * 0.02, 0.006, 0.03); arm.add(cl);
+      var palm = new THREE.Mesh(new THREE.SphereGeometry(0.017, 10, 6), shellM); palm.scale.set(1, 0.8, 1.3); cl.add(palm);
+      var f1 = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.026, 6), shellHiM); f1.rotation.x = Math.PI / 2; f1.position.set(-s * 0.005, 0.005, 0.022); cl.add(f1);
+      var f2 = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.022, 6), shellHiM); f2.rotation.x = Math.PI / 2; f2.position.set(s * 0.006, -0.004, 0.02); cl.add(f2);
+      claws.push({ g: cl, f: f2, s: s });
+    });
+    var legs = [];
+    [-1, 1].forEach(function (s) {
+      for (var i = 0; i < 3; i++) {
+        var lg = new THREE.Group(); lg.position.set(s * 0.05, 0.03, 0.018 - i * 0.022); body.add(lg);
+        var a = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.005, 0.04, 5), legM); a.position.set(s * 0.017, -0.002, 0); a.rotation.z = s * 1.15; lg.add(a);
+        var b = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.004, 0.035, 5), legM); b.position.set(s * 0.038, -0.018, 0); b.rotation.z = -s * 0.35; lg.add(b);
+        legs.push({ g: lg, s: s, i: i });
+      }
+    });
+    [-1, 1].forEach(function (s) {
+      var st = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.025, 5), legM); st.position.set(s * 0.016, 0.065, 0.03); body.add(st);
+      var e = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 8, 6), eyeM); e.position.set(s * 0.016, 0.079, 0.03); body.add(e);
+      var hl = new THREE.Mesh(new THREE.SphereGeometry(0.0025, 6, 4), mat(0xf4f6ff)); hl.position.set(s * 0.016 - 0.002, 0.083, 0.035); body.add(hl);
+    });
+    g.userData = { body: body, claws: claws, legs: legs };
+    return g;
+  }
+  var tries = 0;
+  [150, 172, 196, 222, 246].forEach(function (deg, k) {
+    var a = THREE.MathUtils.degToRad(deg), rr = 3.35 + R() * 0.12, q = onBeach(a, rr);
+    while (!dry(q[0], q[1]) && rr < 3.8) { rr += 0.04; q = onBeach(a, rr); }
+    if (!dry(q[0], q[1])) return;
+    var cr = makeCrab(); cr.scale.setScalar(0.9 + R() * 0.35); props.add(cr);
+    beachCrabs.push({ g: cr, a0: a, rr: rr, ph: R() * 10, sp: 0.6 + R() * 0.5, amp: 0.05 + R() * 0.04 });
+  });
+  // star shells: puffy five-point stars and a few fan shells, lying on the dry sand
+  var starM = mat(0xf6e6a6), starHiM = mat(0xfbf0c4), fanM = mat(0xf3e2b0);
+  function starGeo(r) {
+    var s = new THREE.Shape();
+    for (var i = 0; i <= 10; i++) { var a = i / 10 * Math.PI * 2 + Math.PI / 2, rad = i % 2 ? r * 0.45 : r; var x = Math.cos(a) * rad, y = Math.sin(a) * rad; if (i) s.lineTo(x, y); else s.moveTo(x, y); }
+    var g = new THREE.ExtrudeGeometry(s, { depth: r * 0.12, bevelEnabled: true, bevelThickness: r * 0.18, bevelSize: r * 0.16, bevelSegments: 2 });
+    g.rotateX(-Math.PI / 2); g.computeVertexNormals(); return g;
+  }
+  function fanGeo(r) { // scallop: a half disc with ribs pushed up
+    var g = new THREE.CircleGeometry(r, 18, 0, Math.PI), p = g.attributes.position;
+    for (var i = 0; i < p.count; i++) { var x = p.getX(i), y = p.getY(i), a = Math.atan2(y, x), d = Math.hypot(x, y); p.setZ(i, d * (0.35 + 0.12 * Math.abs(Math.sin(a * 9)))); }
+    g.rotateX(-Math.PI / 2); g.computeVertexNormals(); return g;
+  }
+  for (var n = 0, t = 0; n < 12 && t < 200; t++) {
+    var a = THREE.MathUtils.degToRad(120 + R() * 150), rr = 3.3 + R() * 0.5, q = onBeach(a, rr);
+    if (!dry(q[0], q[1])) continue;
+    var star = n % 3 !== 2, sz = star ? 0.028 + R() * 0.018 : 0.03 + R() * 0.012;
+    var m = new THREE.Mesh(star ? starGeo(sz) : fanGeo(sz), star ? (n % 2 ? starM : starHiM) : fanM);
+    if (!star) m.material.side = THREE.DoubleSide;
+    m.position.set(q[0], height(q[0], q[1]) + 0.004, q[1]); m.rotation.set((R() - 0.5) * 0.25, R() * 6.3, (R() - 0.5) * 0.25);
+    m.castShadow = true; props.add(m); n++;
+  }
+})();
+function updateBeachLife(t) {
+  beachCrabs.forEach(function (c) {
+    var u = t * c.sp + c.ph, cyc = u % 6, off;
+    // scuttle sideways one way, pause, scuttle back, pause (ease in-out); claws wave while paused
+    if (cyc < 1.5) off = THREE.MathUtils.smootherstep(cyc / 1.5, 0, 1); else if (cyc < 3) off = 1; else if (cyc < 4.5) off = 1 - THREE.MathUtils.smootherstep((cyc - 3) / 1.5, 0, 1); else off = 0;
+    var moving = (cyc < 1.5 || (cyc > 3 && cyc < 4.5)), a = c.a0 + (off - 0.5) * c.amp * 2 / c.rr;
+    var x = 2.4 + Math.cos(a) * c.rr, z = Math.sin(a) * c.rr;
+    c.g.position.set(x, height(x, z), z);
+    c.g.rotation.y = -a - Math.PI / 2; // face the lagoon centre, walk sideways along the shore
+    var U = c.g.userData;
+    U.body.position.y = moving ? Math.abs(Math.sin(u * 22)) * 0.006 : 0;
+    U.legs.forEach(function (l) { l.g.rotation.x = moving ? Math.sin(u * 22 + l.i * 2.1 + (l.s > 0 ? Math.PI : 0)) * 0.5 : 0; });
+    U.claws.forEach(function (cl) { cl.g.rotation.x = moving ? 0 : Math.sin(u * 4 + cl.s) * 0.35 - 0.15; cl.f.rotation.y = Math.max(0, Math.sin(u * 7 + cl.s)) * 0.4 * -cl.s; });
+  });
+}
