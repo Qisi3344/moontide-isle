@@ -49,3 +49,16 @@ controls.addEventListener("end", function () {
 
 function ss(a, b, x) { var t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 function lerp(a, b, t) { return a + (b - a) * t; }
+
+// rounded box (2026-10-23: she wanted the lamp pillars and the house's straight edges softer).
+// Extruded rounded rectangle + a bevel of the same size: every edge and corner gets a soft radius r.
+function rbox(w, h, d, r) {
+  r = Math.min(r, w * 0.45, h * 0.45, d * 0.45);
+  var b = r * 0.6, rc = r * 0.4, x = w / 2 - b, z = d / 2 - b, s = new THREE.Shape();
+  s.moveTo(-x + rc, -z); s.lineTo(x - rc, -z); s.quadraticCurveTo(x, -z, x, -z + rc);
+  s.lineTo(x, z - rc); s.quadraticCurveTo(x, z, x - rc, z); s.lineTo(-x + rc, z);
+  s.quadraticCurveTo(-x, z, -x, z - rc); s.lineTo(-x, -z + rc); s.quadraticCurveTo(-x, -z, -x + rc, -z);
+  var g = new THREE.ExtrudeGeometry(s, { depth: Math.max(1e-4, h - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 4 });
+  g.rotateX(-Math.PI / 2); g.translate(0, -(h - 2 * b) / 2, 0); g.computeVertexNormals();
+  return g;
+}
