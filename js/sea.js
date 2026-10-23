@@ -80,7 +80,9 @@ el.addEventListener("pointerup", function (e) {
   var b = el.getBoundingClientRect();
   ndc.set((e.clientX - b.left) / b.width * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
   rc.setFromCamera(ndc, camera);
-  var hits = rc.intersectObjects(tapTargets, true);
+  var hits = rc.intersectObjects(tapTargets, true).filter(function (h) { // raycaster also hits hidden meshes (workshop hides most of the island)
+    if (!h.object.isMesh) return false; // petals/sparkle Points have a 1-unit pick radius: they made the whole yard "the house"
+    for (var o = h.object; o; o = o.parent) if (!o.visible) return false; return true; });
   if (hits.length && hits[0].object.userData.spot) { poke(hits[0].object.userData.spot); return; }
   if (!rc.ray.intersectPlane(plane, hit)) return;
   if (Math.hypot(hit.x, hit.z) > 34 || inside(hit.x, hit.z) > -0.15) return;
