@@ -59,6 +59,7 @@ renderer.setAnimationLoop(function () {
   updateMoon();
   updateSpots(timeU.value, nightU.value);
   updateMagic(dt, timeU.value, nightU.value);
+  if (typeof updateBeachLife === 'function') updateBeachLife(timeU.value);
   updateLamps(timeU.value, nightU.value);
   updateHouse(timeU.value, nightU.value);
   renderer.render(scene, camera);
