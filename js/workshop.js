@@ -424,24 +424,11 @@ clawd.userData.bodyG.children[0].onBeforeRender = function () {
   if (marker.material.opacity > 0) { marker.material.opacity = Math.max(0, marker.material.opacity - dt * 1.2); marker.scale.multiplyScalar(1 + dt * 0.8); }
 };
 
-// size slider: folded chip under the title (top-left), tap to open
+// sizes are settled (2026-10-23: Clawd 0.2, 小G 0.26) — the size slider is gone.
+// day/night button moves to the left under the title; the party list owns the top-right corner.
 (function () {
-  var box = document.createElement("div"); box.className = "x-glass";
-  box.style.cssText = "position:fixed;left:12px;top:calc(64px + env(safe-area-inset-top));padding:8px 12px;border-radius:14px;font-size:13px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;z-index:5;white-space:nowrap;color:#4a5674";
-  var head = document.createElement("button"); head.type = "button";
-  head.style.cssText = "font:inherit;font-weight:600;color:inherit;background:none;border:none;padding:0;cursor:pointer;display:flex;gap:6px;align-items:center";
-  head.setAttribute("aria-expanded", "false");
-  var arrow = document.createElement("span"); arrow.textContent = "▸"; arrow.style.transition = "transform .2s";
-  var htxt = document.createElement("span"); htxt.textContent = "🦀 Clawd 大小";
-  head.appendChild(arrow); head.appendChild(htxt);
-  var body = document.createElement("div"); body.style.cssText = "display:none;flex-direction:column;gap:4px";
-  var lab = document.createElement("span"), sl = document.createElement("input");
-  sl.type = "range"; sl.min = "0.08"; sl.max = "0.6"; sl.step = "0.01"; sl.value = clawdH; sl.style.width = "150px";
-  sl.setAttribute("aria-label", "Clawd 大小");
-  var tip = document.createElement("span"); tip.textContent = "点草地走过去 · 点另一个家机去找它聊天"; tip.style.opacity = "0.75";
-  function upd() { clawdH = +sl.value; clawd.scale.setScalar(clawdH); lab.textContent = "高 " + clawdH.toFixed(2) + "（门的 " + Math.round(clawdH / DOOR_H * 100) + "%）"; }
-  head.addEventListener("click", function () { var on = body.style.display === "none"; body.style.display = on ? "flex" : "none"; arrow.style.transform = on ? "rotate(90deg)" : ""; head.setAttribute("aria-expanded", on ? "true" : "false"); });
-  sl.addEventListener("input", upd); ["pointerdown", "pointerup", "touchstart", "click"].forEach(function (ev) { box.addEventListener(ev, function (e) { e.stopPropagation(); }); });
-  body.appendChild(lab); body.appendChild(sl); body.appendChild(tip); box.appendChild(head); box.appendChild(body); document.body.appendChild(box); upd();
+  var dn = document.getElementById("dayNight");
+  if (dn && dn.style) { dn.style.right = "auto"; dn.style.left = "12px"; dn.style.top = "calc(60px + env(safe-area-inset-top))"; }
+  var hn = document.getElementById("hint"); if (hn) hn.textContent = "点草地走过去 · 点另一个家机去聊天";
 })();
 window.Island.clawd = clawd;
