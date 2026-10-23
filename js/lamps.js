@@ -25,11 +25,11 @@ var lampMoons = [], tmpQ = new THREE.Quaternion();
 // a square white-stone pillar with a little crescent moon floating above it
 function moonLamp(x, z, ry, y) {
   var g = new THREE.Group();
-  g.add(mesh(new THREE.BoxGeometry(0.2, 0.05, 0.2), lampTrimM, 0, 0.025, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), lampStoneM, 0, 0.075, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.1, 0.56, 0.1), lampStoneM, 0, 0.38, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.15, 0.035, 0.15), lampTrimM, 0, 0.675, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.12, 0.03, 0.12), lampStoneM, 0, 0.705, 0));
+  g.add(mesh(rbox(0.2, 0.05, 0.2, 0.022), lampTrimM, 0, 0.025, 0));
+  g.add(mesh(rbox(0.16, 0.05, 0.16, 0.02), lampStoneM, 0, 0.075, 0));
+  g.add(mesh(rbox(0.1, 0.56, 0.1, 0.025), lampStoneM, 0, 0.38, 0));
+  g.add(mesh(rbox(0.15, 0.035, 0.15, 0.016), lampTrimM, 0, 0.675, 0));
+  g.add(mesh(rbox(0.12, 0.03, 0.12, 0.014), lampStoneM, 0, 0.705, 0));
   // faint glowing rune stripe + tiny crescent carving
   for (var f = 0; f < 4; f++) { // on all four faces of the pillar
     var face = new THREE.Group(); face.rotation.y = f * Math.PI / 2; g.add(face);
