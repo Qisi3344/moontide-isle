@@ -121,12 +121,14 @@ var CHAR = {
     emo: { hello: ["smile"], wday: ["smile", "star"], wnight: ["blush", "heart"], walk: ["smile", "sweat"], ask_gday: ["star"], ask_knot: ["star"] },
     // emote anchors in "height = 1" units: head top, side of head, blush spot (x, y, z, yaw)
     face: { top: 0.96, side: 0.55, blush: [0.34, 0.54, 0.188, 0] },
+    faceRoot: function () { return clawd.userData.bodyG; }, faceScale: 4.15, faceOffY: 0, // bodyG: native units, ×4.15 of height
     menu: [["wday", "1、聊聊天气怎么样？"], ["walk", "2、你为什么走路横着走？"]],
     night: { wday: "wnight" }
   }
 };
 function say(key, after, spk) { // menu hides while they talk; `after` runs when the line ends
   spk = spk || talkUI.who; talkUI.cur = spk;
+  if (key !== "hello") camS.est = -1; // once the real conversation starts, the establishing two-shot is done
   var C = CHAR[spk], line = C.lines[key], V = C.voice();
   talkUI.menu.style.display = "none"; clearTimeout(talkUI.tm);
   var done = function () { clearTimeout(talkUI.tm); if (talkUI.open && after) after(); };
@@ -136,7 +138,8 @@ function say(key, after, spk) { // menu hides while they talk; `after` runs when
   var b = talkUI.bubble; b.classList.remove("is-on"); void b.offsetWidth; b.classList.add("is-on");
   if (talkUI.voice) { try { talkUI.voice.pause(); } catch (e) {} }
   talkUI.voice = null;
-  emote(spk, (C.emo && C.emo[key]) || [], dur / 1000 + 0.8);
+  var em = (C.emo && C.emo[key]) || []; talkUI.close = em.indexOf("blush") >= 0 || em.indexOf("heart") >= 0;
+  emote(spk, em, dur / 1000 + 0.8);
   if (V && V[key]) {
     try { talkUI.voice = new Audio(V[key]); talkUI.voice.onended = done; var pr = talkUI.voice.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
   }
@@ -167,7 +170,7 @@ function talk(who, partner) {
     });
     talkUI.menu.appendChild(btn);
   });
-  talkUI.open = true; talkUI.who = who; talkUI.cur = who; talkUI.partner = partner || null;
+  talkUI.chatId = (talkUI.chatId || 0) + 1; talkUI.open = true; talkUI.who = who; talkUI.cur = who; talkUI.partner = partner || null;
   placeTalk(); say("hello", function () { talkUI.menu.style.display = "flex"; });
 }
 function closeTalk() {
@@ -234,9 +237,11 @@ function emoFor(name) {
     var sp = new THREE.Sprite(m); sp.scale.setScalar(0.26); sp.visible = false; sp.renderOrder = 5; hold.add(sp); E.sp[k] = sp;
   });
   var bm = new THREE.MeshBasicMaterial({ map: emoTex("blush"), color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  // blush rides the part that actually moves (Clawd's bobbing body / 小G's torso bone), so it never slides off the face
+  var fr = (C.faceRoot && C.faceRoot()) || hold, fs = fr === hold ? 1 : C.faceScale, fy = fr === hold ? 0 : (C.faceOffY || 0);
   [-1, 1].forEach(function (sd) {
-    var b = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.13), bm); b.position.set(sd * F.blush[0], F.blush[1], F.blush[2]); b.rotation.y = sd * F.blush[3];
-    b.visible = false; hold.add(b); E.blush.push(b);
+    var b = new THREE.Mesh(new THREE.PlaneGeometry(0.2 * fs, 0.13 * fs), bm); b.position.set(sd * F.blush[0] * fs, F.blush[1] * fs - fy, F.blush[2] * fs); b.rotation.y = sd * F.blush[3];
+    b.visible = false; b.renderOrder = 4; fr.add(b); E.blush.push(b);
   });
   E.bm = bm; EMO[name] = E; return E;
 }
@@ -259,40 +264,82 @@ function emoTick(dt, T) {
   });
 }
 
-// ---- close-up camera while chatting: cut in on whoever is speaking, ease back out afterwards ----
-var camS = { on: false, saved: null }, camGoal = new THREE.Vector3(), camF = new THREE.Vector3(), camD = new THREE.Vector3();
-function camTick(dt) {
-  var k = 1 - Math.exp(-dt * 3.2);
+// ---- dialogue camera (2026-10-23, redone after she found the old one just swung left-right) ----
+// Film grammar: pick a side of the line of action ONCE per chat (180° rule), open on a two-shot,
+// then hard-cut shot / reverse-shot over the listener's shoulder; lines with blush/heart get a closer single.
+// Only entering and leaving the chat glide; inside the chat every change of speaker is a straight cut.
+var camS = { on: false, saved: null, side: 1, key: "", t0: 0, settled: false, est: 0 };
+var cAim = new THREE.Vector3(), cDir = new THREE.Vector3(), cGoal = new THREE.Vector3(), cU = new THREE.Vector3(), cP = new THREE.Vector3(), cTmp = new THREE.Vector3();
+function fitDist(w, h) { // distance at which a w×h box fills the frame, whatever the screen shape
+  var vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  return Math.max(h / (2 * Math.tan(vf / 2)), w / (2 * Math.tan(hf / 2)));
+}
+function face(C) { var o = C.obj.position; return cTmp.set(o.x, o.y + C.h() * 0.62, o.z); }
+function shotFor(T) { // fills cAim (look-at) and cGoal (camera) for the current beat; returns its key
+  var S = CHAR[talkUI.cur], h = S.h(), sp = S.obj.position;
+  var otherN = talkUI.cur === talkUI.who ? talkUI.partner : talkUI.who, L = otherN && CHAR[otherN];
+  if (!L) { // talking to you: a front medium single
+    cAim.copy(face(S));
+    cDir.set(camS.saved.p.x - sp.x, 0, camS.saved.p.z - sp.z).normalize(); cDir.y = 0.35; cDir.normalize();
+    cGoal.copy(cAim).addScaledVector(cDir, fitDist(h * 2.6, h * 2.3)); return "solo:" + talkUI.cur;
+  }
+  var lp = L.obj.position;
+  cU.set(sp.x - lp.x, 0, sp.z - lp.z); var gap = cU.length() || 0.01; cU.divideScalar(gap); // listener → speaker
+  cP.set(-cU.z, 0, cU.x); // perpendicular; which way is "our side" is fixed by camS.side relative to the host
+  var sgn = (talkUI.cur === talkUI.who ? 1 : -1) * camS.side; // perp flips when the speaker flips, so undo that
+  var hm = Math.max(h, L.h()), kind;
+  if (T < camS.est) { // establishing two-shot: both of them, side-on
+    cAim.set((sp.x + lp.x) / 2, Math.min(sp.y, lp.y) + hm * 0.5, (sp.z + lp.z) / 2);
+    cDir.copy(cP).multiplyScalar(sgn).addScaledVector(cU, 0.0); cDir.y = 0.38; cDir.normalize();
+    cGoal.copy(cAim).addScaledVector(cDir, fitDist(gap + hm * 1.7, hm * 2.3)); kind = "two";
+  } else if (talkUI.close) { // closer single on a feeling
+    cAim.copy(face(S));
+    cDir.copy(cU).multiplyScalar(-1).addScaledVector(cP, sgn * 0.85); cDir.y = 0.28; cDir.normalize();
+    cGoal.copy(cAim).addScaledVector(cDir, fitDist(h * 1.7, h * 1.55)); kind = "cu";
+  } else { // over the listener's shoulder onto the speaker
+    cAim.copy(face(S)).addScaledVector(cP, -sgn * h * 0.25); // leave a little look-room on the speaker's side
+    cDir.copy(cU).multiplyScalar(-1).addScaledVector(cP, sgn * 0.42); cDir.y = 0.34; cDir.normalize();
+    cGoal.copy(cAim).addScaledVector(cDir, Math.max(gap + L.h() * 0.9, fitDist(h * 2.4, h * 2.4))); kind = "ots";
+  }
+  return kind + ":" + talkUI.cur;
+}
+function camTick(dt, T) {
   if (talkUI.open && talkUI.cur) {
     if (!camS.on) {
-      camS.on = true;
+      camS.on = true; camS.settled = false; camS.key = "";
       camS.saved = { p: camera.position.clone(), t: controls.target.clone(), min: controls.minDistance, minP: controls.minPolarAngle, maxP: controls.maxPolarAngle };
       controls.enabled = false; controls.autoRotate = false; controls.minDistance = 0.02; controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI;
     }
-    var S = CHAR[talkUI.cur], o = S.obj, h = S.h();
-    var other = talkUI.cur === talkUI.who ? talkUI.partner : talkUI.who;
-    var lp = other ? CHAR[other].obj.position : camS.saved.p;
-    camF.set(o.position.x, o.position.y + h * 0.6, o.position.z);
-    camD.set(lp.x - o.position.x, 0, lp.z - o.position.z); if (camD.lengthSq() < 1e-6) camD.set(0, 0, 1); camD.normalize();
-    var dist = h * 3.3 + 0.18, sw = 0.55;
-    for (var tries = 0; tries < 2; tries++) {
-      var c = Math.cos(sw), sn = Math.sin(sw);
-      camGoal.set(camD.x * c - camD.z * sn, 0, camD.x * sn + camD.z * c).multiplyScalar(dist).add(camF); camGoal.y += h * 0.85;
-      if (!inHouse(camGoal.x, camGoal.z)) break; sw = -sw;
+    if (talkUI.chatId !== camS.chat) { // a new chat: choose the side of the line once, on whichever side we're already looking from
+      camS.chat = talkUI.chatId; camS.est = talkUI.partner ? Infinity : 0; camS.settled = false; // hold the two-shot until the glide lands
+      if (talkUI.partner) {
+        var A = CHAR[talkUI.who].obj.position, B = CHAR[talkUI.partner].obj.position;
+        var px = -(A.z - B.z), pz = A.x - B.x; // perp of (partner → host)
+        camS.side = ((camera.position.x - (A.x + B.x) / 2) * px + (camera.position.z - (A.z + B.z) / 2) * pz) >= 0 ? 1 : -1;
+        var key0 = shotFor(T); if (inHouse(cGoal.x, cGoal.z)) camS.side = -camS.side; // never park inside the house
+      }
     }
-    camera.position.lerp(camGoal, k); controls.target.lerp(camF, k); camera.lookAt(controls.target);
+    var key = shotFor(T);
+    if (key !== camS.key) { camS.key = key; camS.t0 = T; if (camS.settled) { camera.position.copy(cGoal); controls.target.copy(cAim); } } // hard cut
+    // a slow push-in keeps the held shot breathing
+    var push = Math.min((T - camS.t0) * 0.025, 0.07);
+    cGoal.lerp(cAim, push);
+    var k = camS.settled ? 1 - Math.exp(-dt * 6) : 1 - Math.exp(-dt * 4.5);
+    camera.position.lerp(cGoal, k); controls.target.lerp(cAim, k);
+    if (!camS.settled && camera.position.distanceTo(cGoal) < 0.05) { camS.settled = true; if (camS.est === Infinity) camS.est = T + 1.3; }
+    camera.lookAt(controls.target);
   } else if (camS.on) {
-    var sv = camS.saved;
-    camera.position.lerp(sv.p, k); controls.target.lerp(sv.t, k); camera.lookAt(controls.target);
+    var sv = camS.saved, k2 = 1 - Math.exp(-dt * 3.2);
+    camera.position.lerp(sv.p, k2); controls.target.lerp(sv.t, k2); camera.lookAt(controls.target);
     if (camera.position.distanceTo(sv.p) < 0.01 && controls.target.distanceTo(sv.t) < 0.01) {
-      camera.position.copy(sv.p); controls.target.copy(sv.t);
+      camera.position.copy(sv.p); controls.target.copy(sv.t); camS.chat = null;
       controls.minDistance = sv.min; controls.minPolarAngle = sv.minP; controls.maxPolarAngle = sv.maxP; controls.enabled = true; camS.on = false;
     }
   }
 }
 // run after OrbitControls each frame (main loop calls updateHouse after controls.update)
 var wsClock = new THREE.Clock(), _updateHouse = updateHouse;
-updateHouse = function (t, n) { _updateHouse(t, n); var dt = Math.min(wsClock.getDelta(), 0.05); camTick(dt); emoTick(dt, t); };
+updateHouse = function (t, n) { _updateHouse(t, n); var dt = Math.min(wsClock.getDelta(), 0.05); camTick(dt, t); emoTick(dt, t); };
 
 // send the steered 家机 somewhere; cb runs on arrival
 function moveChar(name, x, z, cb) {
