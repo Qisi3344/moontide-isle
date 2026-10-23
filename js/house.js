@@ -45,14 +45,14 @@ function dome(parent, x, y, z, r) {
 
 // ---- main two-storey block ----
 var MW = 0.86, MD = 0.74, MH = 1.0;                  // width along z, depth along x, height
-house.add(mesh(new THREE.BoxGeometry(MD + 0.08, 0.08, MW + 0.08), hBaseM, 0, 0.04, 0));
-house.add(mesh(new THREE.BoxGeometry(MD, MH, MW), hWallM, 0, 0.08 + MH / 2, 0));
-house.add(mesh(new THREE.BoxGeometry(MD + 0.07, 0.05, MW + 0.07), hTrimM, 0, 0.08 + MH, 0));   // cornice
-house.add(mesh(new THREE.BoxGeometry(MD + 0.03, 0.03, MW + 0.03), hTrimM, 0, 0.08 + MH * 0.52, 0)); // floor band
-var domeTopY = dome(house, 0, 0.08 + MH + 0.025, 0, 0.36);
+house.add(mesh(rbox(MD + 0.08, 0.08, MW + 0.08, 0.035), hBaseM, 0, 0.04, 0));
+house.add(mesh(rbox(MD, MH, MW, 0.06), hWallM, 0, 0.08 + MH / 2, 0));
+house.add(mesh(rbox(MD + 0.07, 0.05, MW + 0.07, 0.022), hTrimM, 0, 0.08 + MH, 0));   // cornice
+house.add(mesh(rbox(MD + 0.03, 0.03, MW + 0.03, 0.014), hTrimM, 0, 0.08 + MH * 0.52, 0)); // floor band
+var top = dome(house, 0, 0.08 + MH + 0.025, 0, 0.36);
 // moon crystal on the tip
-house.add(mesh(new THREE.ConeGeometry(0.035, 0.08, 6), hTrimM, 0, domeTopY + 0.03, 0));
-var hCrystal = mesh(new THREE.OctahedronGeometry(0.055, 0), hCrystalM, 0, domeTopY + 0.13, 0);
+house.add(mesh(new THREE.ConeGeometry(0.035, 0.08, 6), hTrimM, 0, top + 0.03, 0));
+var hCrystal = mesh(new THREE.OctahedronGeometry(0.055, 0), hCrystalM, 0, top + 0.13, 0);
 hCrystal.scale.y = 1.6; house.add(hCrystal);
 // front (+x): wooden door + big window downstairs, window + balcony upstairs
 var FX = MD / 2 + 0.002;
@@ -60,7 +60,7 @@ archWindow(house, FX, 0.08, 0.2, 0.22, 0.4, true);
 archWindow(house, FX, 0.2, -0.2, 0.24, 0.3);
 archWindow(house, FX, 0.66, 0, 0.2, 0.28);
 var bal = new THREE.Group(); bal.position.set(FX, 0.62, 0); house.add(bal);
-bal.add(mesh(new THREE.BoxGeometry(0.16, 0.035, 0.42), hTrimM, 0.08, 0, 0));
+bal.add(mesh(rbox(0.16, 0.035, 0.42, 0.015), hTrimM, 0.08, 0, 0));
 bal.add(mesh(new THREE.BoxGeometry(0.03, 0.02, 0.42), hTrimM, 0.15, 0.13, 0));
 for (var bi = 0; bi < 7; bi++) bal.add(mesh(new THREE.BoxGeometry(0.018, 0.11, 0.018), hTrimM, 0.15, 0.07, -0.18 + bi * 0.06));
 [-0.15, 0.15].forEach(function (z) { bal.add(mesh(new THREE.BoxGeometry(0.05, 0.08, 0.04), hTrimM, 0.03, -0.05, z)); }); // corbels
@@ -73,16 +73,16 @@ archWindow(house, 0, 0.66, MW / 2 + 0.002, 0.16, 0.24).rotation.y = 0;
 
 // ---- lower wing with the small dome (toward -z) ----
 var WW = 0.56, WD = 0.62, WH = 0.56, WZ = -(MW / 2 + WW / 2 - 0.02);
-house.add(mesh(new THREE.BoxGeometry(WD + 0.08, 0.08, WW + 0.06), hBaseM, -0.04, 0.04, WZ));
-house.add(mesh(new THREE.BoxGeometry(WD, WH, WW), hWallM, -0.04, 0.08 + WH / 2, WZ));
-house.add(mesh(new THREE.BoxGeometry(WD + 0.06, 0.045, WW + 0.06), hTrimM, -0.04, 0.08 + WH, WZ));
+house.add(mesh(rbox(WD + 0.08, 0.08, WW + 0.06, 0.035), hBaseM, -0.04, 0.04, WZ));
+house.add(mesh(rbox(WD, WH, WW, 0.05), hWallM, -0.04, 0.08 + WH / 2, WZ));
+house.add(mesh(rbox(WD + 0.06, 0.045, WW + 0.06, 0.02), hTrimM, -0.04, 0.08 + WH, WZ));
 dome(house, -0.04, 0.08 + WH + 0.02, WZ, 0.24);
 archWindow(house, WD / 2 - 0.04 + 0.002, 0.16, WZ, 0.28, 0.32);
 
 // ---- front steps with faint blue edge lights ----
 [0, 1].forEach(function (k) {
   var w = 0.34 - k * 0.04, d = 0.09;
-  house.add(mesh(new THREE.BoxGeometry(d, 0.04, w), hBaseM, FX + 0.05 + (1 - k) * 0.08, 0.02 + k * 0.04, 0.2));
+  house.add(mesh(rbox(d, 0.04, w, 0.018), hBaseM, FX + 0.05 + (1 - k) * 0.08, 0.02 + k * 0.04, 0.2));
   house.add(mesh(new THREE.BoxGeometry(0.012, 0.012, w), hStepGlowM, FX + 0.096 + (1 - k) * 0.08, 0.042 + k * 0.04, 0.2));
 });
 
@@ -95,8 +95,8 @@ var hLight = new THREE.PointLight(lc(0xffb060), 0, 3.4, 2); hLight.position.set(
 
 // ---- wooden bench with a blue cushion under the wing window ----
 var bench = new THREE.Group(); bench.position.set(WD / 2 - 0.04 + 0.1, 0, WZ - 0.02); house.add(bench);
-bench.add(mesh(new THREE.BoxGeometry(0.12, 0.025, 0.34), hWoodM, 0, 0.13, 0));
-bench.add(mesh(new THREE.BoxGeometry(0.1, 0.02, 0.28), hClothM, 0.005, 0.152, 0));
+bench.add(mesh(rbox(0.12, 0.025, 0.34, 0.011), hWoodM, 0, 0.13, 0));
+bench.add(mesh(rbox(0.1, 0.02, 0.28, 0.009), hClothM, 0.005, 0.152, 0));
 [-0.14, 0.14].forEach(function (z) { bench.add(mesh(new THREE.BoxGeometry(0.1, 0.12, 0.025), hWoodDarkM, 0, 0.06, z)); });
 
 // ---- little iron stove with a kettle (warm glow at night) ----
@@ -177,6 +177,7 @@ var potProfile = [[0, 0], [0.032, 0], [0.042, 0.012], [0.05, 0.035], [0.05, 0.05
 // ---- 小院: a patio of irregular moon-white flagstones with thin grass seams, plus a stepping-stone path ----
 // cells are a jittered-grid Voronoi (each stone = its point's cell, shrunk a little so grass shows between)
 var yard = new THREE.Group(); yard.position.set(CX, HC, 0); scene.add(yard);
+var groundMeshes = []; // flagstones etc. that characters stand on (see groundY)
 var flagM = [mat(0xeef0f6), mat(0xe2e6ef), mat(0xd5dbe8)], flagEdgeM = mat(0xc4cbdc);
 function yRand(k) { var x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 (function patio() {
@@ -212,7 +213,7 @@ function yRand(k) { var x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x -
     var g = new THREE.ExtrudeGeometry(sh, { depth: hgt, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.01, bevelSegments: 1 });
     g.rotateX(-Math.PI / 2);
     var m = new THREE.Mesh(g, flagM[Math.floor(yRand(i + 3) * 3)]);
-    m.position.y = 0.002; yard.add(m);
+    m.position.y = 0.002; yard.add(m); groundMeshes.push(m);
   });
 })();
 // stepping stones from the front steps out toward the lagoon side
@@ -221,8 +222,22 @@ for (var si = 0; si < 4; si++) {
   var wx = CX + sx, wz = sz;
   if (Math.abs(height(wx, wz) - HC) > 0.05) break;
   var ss_ = new THREE.Mesh(new THREE.CylinderGeometry(0.1 - si * 0.008, 0.11 - si * 0.008, 0.03, 9), flagM[si % 3]);
-  ss_.scale.z = 0.8; ss_.rotation.y = si * 0.7; ss_.position.set(sx, 0.015, sz); yard.add(ss_);
+  ss_.scale.z = 0.8; ss_.rotation.y = si * 0.7; ss_.position.set(sx, 0.015, sz); yard.add(ss_); groundMeshes.push(ss_);
 }
+// top of whatever paving is under (x, z), or the grass level HC — so feet sit on the stones instead of sinking in
+var groundY = (function () {
+  var rc = new THREE.Raycaster(), o = new THREE.Vector3(), dn = new THREE.Vector3(0, -1, 0);
+  var S = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+  return function (x, z, r) { // r = footprint radius: highest stone under the feet wins, so seams don't make it dip
+    var y = HC;
+    for (var i = 0; i < (r ? 5 : 1); i++) {
+      o.set(x + S[i][0] * (r || 0), HC + 0.5, z + S[i][1] * (r || 0)); rc.set(o, dn); rc.far = 0.6;
+      var h = rc.intersectObjects(groundMeshes, false);
+      if (h.length && h[0].point.y > y) y = h[0].point.y;
+    }
+    return y;
+  };
+})();
 clearing.visible = false; ring.visible = false;   // the patio replaces the old round paving + ring slabs
 
 // ---- big wind-swept moon tree behind the house, back-left (her sketch + render, 2026-10-21) ----
@@ -353,10 +368,14 @@ function updatePetals(t, n) {
 scene.add(house);
 // tap the house just like the clearing
 houseSpot.label = "我们的小房子 ♡";
-houseSpot.parts = [house];
+houseSpot.parts = []; // 2026-10-23 she asked: the house never bounces
 houseSpot.anchor = new THREE.Vector3(CX - 0.18, HC + 1.75, 0.05);
 house.traverse(function (o) { o.userData.spot = houseSpot; });
-tapTargets.push(house);
+// 2026-10-23: only the house itself answers a tap now. The invisible clearing disc used to catch taps on the
+// ground, trees and lamps around it and made the house bounce; trees/lamps/props now block the ray instead.
+houseDisc.traverse(function (o) { o.userData.spot = null; });
+tapTargets.splice(tapTargets.indexOf(houseDisc), 1);
+tapTargets.push(house, props, lampsG);
 
 function updateHouse(t, n) {
   hWinM.emissiveIntensity = lerp(0.25, 2.3, n); updatePetals(t, n);
@@ -368,6 +387,6 @@ function updateHouse(t, n) {
   hCrystal.rotation.y = t * 0.6 * MM;
   hanger.rotation.z = Math.sin(t * 0.9) * 0.04 * MM; hanger.rotation.x = Math.sin(t * 0.7 + 1) * 0.03 * MM;
   mpBudM.opacity = lerp(0.6, 1, n); mpBuds.forEach(function (b, i) { b.position.y += 0; b.rotation.z = Math.sin(t * 1.1 + i) * 0.15 * MM; });
-  hCrystal.position.y = domeTopY + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
+  hCrystal.position.y = top + 0.13 + Math.sin(t * 1.3) * 0.012 * MM;
 }
 if (window.Island) { window.Island.house = house; window.Island.yard = yard; }
