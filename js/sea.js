@@ -24,9 +24,10 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   uniforms: seaU, transparent: true, depthWrite: false,
   vertexShader: [
     "uniform float uTime,uWave; uniform vec4 uRip[6]; varying vec3 vW; varying vec3 vN;",
+    "float insideV(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
     "float H(vec2 p){ float t=uTime;",
-    " float far=smoothstep(4.,14.,length(p));",
-    " float h=uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t)+far*(0.06*sin(0.9*p.x-0.6*p.y+1.6*t)+0.035*sin(1.7*p.y+0.8*p.x-2.1*t)));",
+    " float far=smoothstep(4.,14.,length(p)); float calm=mix(0.25,1.,smoothstep(0.,2.5,0.12-min(5.0-length(p),length(p-vec2(2.4,0.))-2.95))); // swells settle over the shallow beach (2026-10-23)",
+    " float h=calm*uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t)+far*(0.06*sin(0.9*p.x-0.6*p.y+1.6*t)+0.035*sin(1.7*p.y+0.8*p.x-2.1*t)));",
     " for(int i=0;i<6;i++){ vec4 r=uRip[i]; float a=t-r.z;",
     "  if(r.w>0.0 && a>0.0 && a<7.0){ float d=distance(p,r.xy);",
     "   float front=smoothstep(a*3.2+0.8,a*3.2-0.8,d);",
@@ -40,8 +41,9 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   fragmentShader: [
     "uniform float uTime,uNight; uniform vec3 uSun,uFog,uSky,uShallow,uDeep; varying vec3 vW; varying vec3 vN;",
     "float inside(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
+    BEACH_GLSL,
     "void main(){ vec3 n=normalize(vN); vec3 v=normalize(cameraPosition-vW); float r=length(vW.xz);",
-    " float s=max(0.,-inside(vW.xz)-0.12);",
+    " float s=max(0.,0.12-beachD(vW.xz)); float dep=vW.y-beachY(beachD(vW.xz)); // real water depth over the sloped sand (2026-10-23)",
     " float lag=(1.-smoothstep(2.4,3.6,length(vW.xz-vec2(2.4,0.))))*(1.-smoothstep(4.4,5.6,length(vW.xz))); float sd=s*(1.-0.25*lag);",
     " vec3 c=mix(uShallow,uDeep,smoothstep(0.15,2.2,sd)); c=mix(c,vec3(0.008,0.0497,0.2542),smoothstep(4.,18.,sd)*0.75);",
     " float dif=max(dot(n,uSun),0.);",
@@ -50,15 +52,15 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     " float fr=pow(1.-max(dot(n,v),0.),3.);",
     " c+=fr*mix(0.15,0.3,uNight)*mix(uSky,vec3(0.5,0.65,1.),uNight);",
     " float wob=sin(atan(vW.z,vW.x)*14.+uTime*1.4)*0.08;",
-    " float foam=1.-smoothstep(0.3,1.0+wob,s); // wider pale-sand shallows band around the island, both sea side and lagoon (2026-10-21)",
-    " c=mix(c,vec3(1.,0.99,0.95)*mix(1.,0.55,uNight),foam*0.5);",
+    " float clear=1.-smoothstep(0.0,0.3+wob,dep); // shallow water over the real sand goes clear aqua (was a painted pale band till 2026-10-23)",
+    " c=mix(c,mix(uShallow,vec3(0.75,0.95,0.92),0.55)*mix(1.,0.45,uNight),clear*0.6);",
     " float ang=atan(vW.z,vW.x); float wv=0.05*sin(ang*9.+uTime*1.7)+0.03*sin(ang*23.-uTime*2.3);",
-    " float lip=smoothstep(0.06,0.15,s)*(1.-smoothstep(0.22+wv,0.36+wv,s)); // foam line hugging the shore (2026-10-21)",
+    " float lip=1.-smoothstep(0.0,0.035+0.02*wv/0.08,dep); // foam where the sea actually touches the sand",
     " float ph=fract(uTime*0.22+0.15*sin(ang*5.)); float rw=0.3+ph*0.55; float ring=(1.-smoothstep(0.0,0.05,abs(s-rw)))*(1.-ph)*smoothstep(0.0,0.15,ph);",
     " float fl=max(lip*0.85,ring*0.55); c=mix(c,vec3(1.,0.98,0.94)*mix(1.,0.6,uNight),fl);",
     " c+=vec3(0.2,1.,0.7)*uNight*(0.12+0.05*sin(uTime*0.8+r*0.45))*(1.-0.6*smoothstep(2.,20.,s));",
     " c+=mix(vec3(1.,0.82,0.6),vec3(1.),uNight)*sp*mix(1.,0.7,uNight);",
-    " float a=mix(0.78,0.97,smoothstep(0.,3.,s)); a=max(a,foam*0.5); a=max(a,fl); a=max(a,min(sp,1.));",
+    " float a=mix(0.78,0.97,smoothstep(0.,3.,s)); a=mix(a,0.32,clear); a=max(a,fl); a=max(a,min(sp,1.));",
     " c=mix(c,uFog,smoothstep(22.,38.,r)); a*=1.-smoothstep(28.,41.,r);",
     " gl_FragColor=vec4(c,a);",
     "#include <encodings_fragment>",
@@ -66,6 +68,10 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
   ].join("\n")
 }));
 sea.renderOrder = 2;
+// the ring's radial segments all meet at its centre; at the world origin that fan of slivers sat in the lagoon shallows
+// and showed as a radial 'bow-tie' once the water there went clear (2026-10-23). Centre it under the solid west of the
+// island (the house clearing) instead, where no water is visible.
+sea.position.x = -3.05;
 scene.add(sea);
 
 // ---------- tap ripple ----------
@@ -85,7 +91,7 @@ el.addEventListener("pointerup", function (e) {
     for (var o = h.object; o; o = o.parent) if (!o.visible) return false; return true; });
   if (hits.length && hits[0].object.userData.spot) { poke(hits[0].object.userData.spot); return; }
   if (!rc.ray.intersectPlane(plane, hit)) return;
-  if (Math.hypot(hit.x, hit.z) > 34 || inside(hit.x, hit.z) > -0.15) return;
+  if (Math.hypot(hit.x, hit.z) > 34 || beachD(hit.x, hit.z) > -0.15) return;
   rip[ripI].set(hit.x, hit.z, timeU.value, 1);
   ripI = (ripI + 1) % 6;
 });
