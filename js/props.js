@@ -321,3 +321,60 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
   var q = polar(d[0], d[1]);
   if (inside(q[0], q[1]) > 0.3) bush(q[0], q[1], d[2], k + 1);
 });
+
+// ---------- where the white-stone ledge meets the beach (2026-10-23, her ideas) ----------
+// half-buried moonstones of mixed sizes, a few pebbles, mint moss creeping onto the sand and little moon-grass
+// tufts, all along the ledge foot, to break the clean geometric cut between cliff and beach.
+(function ledgeFoot() {
+  var T = TIERS[1], rs = 4242;
+  function R() { rs = (rs * 9301 + 49297) % 233280; return rs / 233280; }
+  var mossM = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: toonGrad, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2 });
+  mossM.onBeforeCompile = function (sh) { sh.uniforms.uRim = rimU; };
+  var mDeep = lc(0x9ccbb8), mLight = lc(0xc4e2d4), mEdge = lc(0xdfe6d6);
+  function moss(x, z, r) { // flat blob draped over the sand, mint in the middle fading to a sandy edge
+    var N = 14, pos = [], col = [], idx = [], c = new THREE.Color();
+    pos.push(x, height(x, z) + 0.006, z); col.push(mDeep.r, mDeep.g, mDeep.b);
+    for (var ring = 1; ring <= 2; ring++) for (var k = 0; k < N; k++) {
+      var a = k / N * 6.283, rr = r * ring / 2 * (0.75 + 0.35 * Math.sin(a * 3 + x * 7) + 0.15 * R());
+      var px = x + Math.cos(a) * rr, pz = z + Math.sin(a) * rr;
+      pos.push(px, height(px, pz) + 0.006, pz); c.copy(ring === 1 ? mLight : mEdge); col.push(c.r, c.g, c.b);
+    }
+    for (k = 0; k < N; k++) {
+      var k1 = (k + 1) % N; idx.push(0, 1 + k1, 1 + k);
+      idx.push(1 + k, 1 + k1, 1 + N + k1, 1 + k, 1 + N + k1, 1 + N + k);
+    }
+    var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+    var m = new THREE.Mesh(g, mossM); m.receiveShadow = true; props.add(m);
+  }
+  function stone(x, z, r, seed) {
+    var m = new THREE.Mesh(rockGeo(r, seed, 0.75 + 0.3 * R()), rockVM);
+    m.position.set(x, height(x, z) - r * 0.28, z); m.rotation.set((R() - 0.5) * 0.4, R() * 6.3, (R() - 0.5) * 0.4);
+    m.castShadow = true; m.receiveShadow = true; props.add(m);
+  }
+  function footPoint(th, out) { // a point on the sand just off the ledge's lagoon-facing wall
+    var d1 = tierD1(T, 1, th) - out; return [Math.cos(th) * d1, Math.sin(th) * d1];
+  }
+  var spots = [];
+  for (var th = Math.PI - T.A + 0.08; th < Math.PI + T.A - 0.08; th += 0.09 + R() * 0.07) spots.push(th);
+  spots.forEach(function (th, k) {
+    var q = footPoint(th, 0.1 + R() * 0.08), x = q[0], z = q[1];
+    if (beachD(x, z) < 0.25) return; // keep it on dry sand
+    var kind = k % 5;
+    if (kind === 0 || kind === 3) { // a rock cluster: one big + 1-3 small
+      stone(x, z, 0.07 + R() * 0.06, k * 3.1);
+      for (var i = 0, n = 1 + Math.floor(R() * 3); i < n; i++) {
+        var a = R() * 6.3, dd = 0.08 + R() * 0.08; stone(x + Math.cos(a) * dd, z + Math.sin(a) * dd, 0.025 + R() * 0.03, k * 3.1 + i + 1);
+      }
+    }
+    if (kind !== 3) moss(x + (R() - 0.5) * 0.1, z + (R() - 0.5) * 0.1, 0.1 + R() * 0.1);
+    if (kind === 1 || kind === 4) {
+      var t = makeGrassTuft(k + 51, 10 + Math.floor(R() * 6), kind === 1 ? 1 : 0);
+      t.scale.setScalar(0.42 + R() * 0.15); t.position.set(x, height(x, z) - 0.01, z); t.rotation.y = R() * 6.3; props.add(t);
+    }
+    if (kind === 2) for (var p = 0; p < 3; p++) { // loose pebbles a little further out on the sand
+      var pq = footPoint(th + (R() - 0.5) * 0.06, 0.28 + R() * 0.2);
+      if (beachD(pq[0], pq[1]) > 0.2) stone(pq[0], pq[1], 0.014 + R() * 0.014, k + p * 7);
+    }
+  });
+})();
