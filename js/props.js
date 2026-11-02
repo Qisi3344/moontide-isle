@@ -352,12 +352,14 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
     m.position.set(x, height(x, z) - r * 0.28, z); m.rotation.set((R() - 0.5) * 0.4, R() * 6.3, (R() - 0.5) * 0.4);
     m.castShadow = true; m.receiveShadow = true; props.add(m);
   }
-  function footPoint(th, out) { // a point on the sand just off the ledge's lagoon-facing wall
-    var d1 = tierD1(T, 1, th) - out; return [Math.cos(th) * d1, Math.sin(th) * d1];
+  var SIDE = -1; // -1: lagoon-facing wall, +1: open-sea wall (the sea-side beach came 2026-10-23)
+  function footPoint(th, out) { // a point on the sand just off the ledge's wall
+    var d1 = SIDE < 0 ? tierD1(T, 1, th) - out : tierR(T, 1, th) + out; return [Math.cos(th) * d1, Math.sin(th) * d1];
   }
   var spots = [];
   for (var th = Math.PI - T.A + 0.08; th < Math.PI + T.A - 0.08; th += 0.09 + R() * 0.07) spots.push(th);
-  spots.forEach(function (th, k) {
+  [-1, 1].forEach(function (side) { SIDE = side; spots.forEach(function (th, k) {
+    if (side > 0) k += 2;
     var q = footPoint(th, 0.1 + R() * 0.08), x = q[0], z = q[1];
     if (beachD(x, z) < 0.25) return; // keep it on dry sand
     var kind = k % 5;
@@ -376,7 +378,7 @@ function polar(deg, r) { var a = THREE.MathUtils.degToRad(deg); return [Math.cos
       var pq = footPoint(th + (R() - 0.5) * 0.06, 0.28 + R() * 0.2);
       if (beachD(pq[0], pq[1]) > 0.2) stone(pq[0], pq[1], 0.014 + R() * 0.014, k + p * 7);
     }
-  });
+  }); });
 })();
 
 // ---------- beach life (2026-10-23, she asked): milky-lavender little real crabs + pale-yellow star shells ----------
