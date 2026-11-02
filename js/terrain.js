@@ -47,8 +47,8 @@ function beachY(d) {
   var t = Math.min(1, (d + 0.6) / 1.2); return -0.32 + 0.48 * t * t * (3 - 2 * t);
 }
 // beachD: like inside(), but the lagoon edge is pushed 0.35 into the lagoon so the inner beach is about twice as wide (2026-10-23)
-function beachD(x, z) { return Math.min(5 - Math.hypot(x, z), Math.hypot(x - 2.4, z) - 2.95); }
-var BEACH_GLSL = "float beachD(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-2.95); }\n" + "float beachY(float d){ if(d<-0.6) return -0.32+(d+0.6)*2.0; float t=min(1.,(d+0.6)/1.2); return -0.32+0.48*t*t*(3.-2.*t); }\n";
+function beachD(x, z) { return Math.min(5.5 - Math.hypot(x, z), Math.hypot(x - 2.4, z) - 2.95); } // sea side pushed out 0.5 too (2026-10-23)
+var BEACH_GLSL = "float beachD(vec2 p){ return min(5.5-length(p),length(p-vec2(2.4,0.))-2.95); }\n" + "float beachY(float d){ if(d<-0.6) return -0.32+(d+0.6)*2.0; float t=min(1.,(d+0.6)/1.2); return -0.32+0.48*t*t*(3.-2.*t); }\n";
 function height(x, z) {
   for (var k = TIERS.length - 1; k >= 1; k--) if (inTier(TIERS[k], k, x, z)) return TIERS[k].top;
   var d = beachD(x, z);
@@ -201,9 +201,9 @@ function ledgeNear(x, z, d) {
 }
 function beachDrift(x, z, d) { return 0.09 * ledgeNear(x, z, d) * THREE.MathUtils.smoothstep(d, -0.05, 0.25); }
 (function buildBeach() {
-  var S = 0.04, N = Math.ceil(12 / S), pos = [], col = [], idx = [], id = {}, n = 0, i, j;
+  var S = 0.04, N = Math.ceil(14 / S), pos = [], col = [], idx = [], id = {}, n = 0, i, j;
   for (i = 0; i <= N; i++) for (j = 0; j <= N; j++) {
-    var x = -6 + i * S, z = -6 + j * S, d = beachD(x, z);
+    var x = -7 + i * S, z = -7 + j * S, d = beachD(x, z);
     if (d < -0.8) continue;
     var near = ledgeNear(x, z, d);
     id[i * 10000 + j] = n++; pos.push(x, beachY(d) + 0.09 * near * THREE.MathUtils.smoothstep(d, -0.05, 0.25), z);
