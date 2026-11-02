@@ -8,7 +8,7 @@ function fit() {
   camera.aspect = w / h; camera.updateProjectionMatrix();
   var vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
   baseDist = Math.max(6.4 / Math.tan(hf / 2), 7.5 / Math.tan(vf / 2));
-  controls.minDistance = baseDist * 0.6; controls.maxDistance = baseDist * 1.3;
+  controls.minDistance = baseDist * 0.12; controls.maxDistance = baseDist * 1.3; // 2026-10-23: zoom in close to the 家机
   scene.fog.near = baseDist + 18; scene.fog.far = Math.min(baseDist + 60, 85); // seabed edge (r 90) fully in haze: no hard horizon line
   placeMoon();
 }
@@ -19,7 +19,7 @@ controls.update();
 addEventListener("resize", function () {
   var d = camera.position.distanceTo(controls.target) / baseDist;
   fit();
-  var off = camera.position.clone().sub(controls.target).setLength(THREE.MathUtils.clamp(d, 0.6, 1.3) * baseDist);
+  var off = camera.position.clone().sub(controls.target).setLength(THREE.MathUtils.clamp(d, 0.12, 1.3) * baseDist);
   camera.position.copy(controls.target).add(off);
 });
 
@@ -78,3 +78,19 @@ window.Island = {
   magic: { rocks: fRocks, crystal: crystal, jellies: jellies },
   lamps: { group: lampsG, pier: pier }
 };
+
+// ---------- free camera (2026-10-23, 她要镜头能压低、能拉近、能挪) ----------
+// two-finger drag pans; the look-at point stays over the island and the camera moves with it.
+controls.enablePan = true; controls.screenSpacePanning = false;
+controls.maxPolarAngle = THREE.MathUtils.degToRad(84);
+var PAN_BOX = { r: 7.5, y0: -0.2, y1: 3 }, _pt = new THREE.Vector3();
+function clampPan() {
+  if (typeof IN_WORKSHOP !== "undefined" && IN_WORKSHOP) { PAN_BOX.cx = CX; PAN_BOX.cz = 0; PAN_BOX.r = CR + 0.9; PAN_BOX.y0 = HC + 0.05; PAN_BOX.y1 = HC + 1.3; }
+  var t = controls.target, cx = PAN_BOX.cx || 0, cz = PAN_BOX.cz || 0;
+  _pt.copy(t);
+  var dx = t.x - cx, dz = t.z - cz, d = Math.hypot(dx, dz);
+  if (d > PAN_BOX.r) { t.x = cx + dx / d * PAN_BOX.r; t.z = cz + dz / d * PAN_BOX.r; }
+  t.y = Math.min(PAN_BOX.y1, Math.max(PAN_BOX.y0, t.y));
+  camera.position.add(_pt.sub(t).negate());
+}
+controls.addEventListener("change", clampPan);
