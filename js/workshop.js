@@ -8,6 +8,10 @@ function nearYard(o) {
   var p = o.getWorldPosition(new THREE.Vector3());
   return Math.hypot(p.x - YC.x, p.z - YC.z) < YR - 0.15 && Math.abs(p.y - HC) < 0.12;
 }
+// IN_WORKSHOP (set by house.html / the house build): stage the yard on its own plinth with its own camera.
+// On the island (2026-10-23) the 家机 just live in the real clearing, and none of this staging runs.
+var IN_WS = typeof IN_WORKSHOP !== "undefined" && IN_WORKSHOP;
+if (IN_WS) {
 // keep only the pieces that stand on the yard; hide the rest
 [props, spotsG, lampsG, magicG].forEach(function (g) {
   g.children.forEach(function (o) { if (o !== ring && !nearYard(o)) o.visible = false; });
@@ -29,8 +33,8 @@ var pTip = new THREE.Mesh(rockGeo(0.5, 2.1, 1.3), rockVM); pTip.position.y = pRo
 // ---- camera: orbit around the house, closer, and allowed to look from the side ----
 TARGET.set(CX + 0.05, HC + 0.85, 0.02); // raised for the big tree
 controls.target.copy(TARGET);
-controls.minPolarAngle = THREE.MathUtils.degToRad(15);
-controls.maxPolarAngle = THREE.MathUtils.degToRad(84);
+controls.minPolarAngle = THREE.MathUtils.degToRad(10);
+controls.maxPolarAngle = THREE.MathUtils.degToRad(89); // 2026-10-23 她要能压低镜头
 controls.autoRotateSpeed = 0.5;
 fit = function () {
   var w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
@@ -38,7 +42,7 @@ fit = function () {
   camera.aspect = w / h; camera.updateProjectionMatrix();
   var vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
   baseDist = Math.max(2.3 / Math.tan(hf / 2), 2.25 / Math.tan(vf / 2));
-  controls.minDistance = baseDist * 0.4; controls.maxDistance = baseDist * 1.5;
+  controls.minDistance = 0.3; controls.maxDistance = baseDist * 1.6; // 2026-10-23: zoom right in on the 家机
   scene.fog.near = 40; scene.fog.far = 160;
 };
 fit();
@@ -46,52 +50,57 @@ camera.position.setFromSpherical(new THREE.Spherical(baseDist, THREE.MathUtils.d
 controls.update();
 houseSpot.anchor.set(CX - 0.18, HC + 1.75, 0.05);
 if (window.Island) window.Island.workshop = { plinth: plinth };
+}
+
 
 // ---- Clawd 试摆（2026-10-23）：果冻小螃蟹捏捏 crab3d.js 的同一个像素轮廓，静态挤出版 ----
 // 只在工坊里对比大小 + 试走路；她确认后再搬上岛（届时拆成 js/clawd.js）。眼睛深靛蓝，不用黑色。
 // 身体和四条小腿分开挤出，这样腿能一抬一抬地走；像真螃蟹一样横着走。
+// 2026-10-23 晚：方块版 Clawd（她的侧面草图 + clawd_lab 里定稿）：方块身体、两侧方块钳、前排 4 后排 4 共 8 条方腿，
+// 深靛蓝竖眼+左上高光。native 单位 = clawd_lab（总高 1.02），inner 缩到高 1，外层 g.scale = 岛上高度。
+function cubeR(w, h, d, r, seg) { // box with softly rounded edges: still a block, never a sharp 白模 corner
+  var g = new THREE.BoxGeometry(w, h, d, seg || 9, seg || 9, seg || 9), p = g.attributes.position, v = new THREE.Vector3(), c = new THREE.Vector3();
+  var hx = w / 2 - r, hy = h / 2 - r, hz = d / 2 - r;
+  for (var i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    c.set(Math.max(-hx, Math.min(hx, v.x)), Math.max(-hy, Math.min(hy, v.y)), Math.max(-hz, Math.min(hz, v.z)));
+    v.sub(c); if (v.lengthSq() > 1e-12) v.setLength(r); v.add(c); p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals(); return g;
+}
+var CLAWD_N = { W: 1.0, H: 0.78, D: 0.675, LEG: 0.24, LW: 0.17, TOT: 1.02 };
+var CLAWD_GAIT = { T: 0.72, A: 0.26, duty: 0.6 }; // calm crab gait: alternating groups, 60% planted
 function makeClawd() {
-  var BODY = [[87,640],[858,640],[858,830],[945,830],[945,1010],[864,1010],[864,1215],[81,1215],[81,1010],[0,1010],[0,830],[87,830]];
-  var LEGS = [[81,171],[256,346],[597,687],[774,864]];
-  function V(p) { return new THREE.Vector2((p[0] - 472.5) / 200, (1405 - p[1]) / 200); } // feet at y=0
-  function rshape(pts, r) {
-    var s = new THREE.Shape(), n = pts.length;
-    for (var i = 0; i < n; i++) {
-      var p = pts[i], pr = pts[(i - 1 + n) % n], nx = pts[(i + 1) % n];
-      var d1 = pr.clone().sub(p), d2 = nx.clone().sub(p), rr = Math.min(r, d1.length() / 2, d2.length() / 2);
-      var a = p.clone().add(d1.normalize().multiplyScalar(rr)), b = p.clone().add(d2.normalize().multiplyScalar(rr));
-      if (i === 0) s.moveTo(a.x, a.y); else s.lineTo(a.x, a.y);
-      s.quadraticCurveTo(p.x, p.y, b.x, b.y);
-    }
-    return s;
-  }
-  function ext(pts, depth, bev) {
-    var g = new THREE.ExtrudeGeometry(rshape(pts.map(V), 0.14), { depth: depth, bevelEnabled: true, bevelThickness: bev, bevelSize: 0.16, bevelSegments: 4, curveSegments: 3 });
-    g.translate(0, 0.16, -depth / 2); g.computeVertexNormals(); return g;
-  }
-  var bodyM = toonMat(0xD97757);
+  var N = CLAWD_N, W = N.W, H = N.H, D = N.D, LEG = N.LEG, LW = N.LW;
+  var bodyM = toonMat(0xD97757), legM = toonMat(0xC9694B);
   var g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
-  var bodyG = new THREE.Group(); inner.add(bodyG);               // bobs while walking
-  var body = new THREE.Mesh(ext(BODY, 1.0, 0.24), bodyM); body.castShadow = true; bodyG.add(body);
+  var bodyG = new THREE.Group(); inner.add(bodyG);               // glides level while walking
+  var body = new THREE.Mesh(cubeR(W, H, D, 0.065), bodyM); body.position.y = LEG + H / 2; body.castShadow = true; bodyG.add(body);
   var eyeM = toonMat(0x2e3a5c); // deep indigo, never black
   var hiM = new THREE.MeshBasicMaterial({ color: lc(0xfbfdff) }); // unlit: stays bright day and night
-  var EY = 0.16 + 2.775;
+  var EY = LEG + H * 0.56;
   var eyes = [], smile = new THREE.Group(); smile.visible = false; bodyG.add(smile);
-  [-1.12, 1.12].forEach(function (x) {
-    var e = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.9, 0.08), eyeM); e.position.set(x, EY, 0.76); bodyG.add(e);
-    var h = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.19), hiM); h.position.set(x - 0.08, EY + 0.25, 0.805); bodyG.add(h); // one catch-light, top-left
+  [-0.2, 0.2].forEach(function (x) {
+    var e = new THREE.Mesh(cubeR(0.085, 0.22, 0.03, 0.012, 3), eyeM); e.position.set(x, EY, D / 2); bodyG.add(e);
+    var h = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.05), hiM); h.position.set(x - 0.016, EY + 0.06, D / 2 + 0.017); bodyG.add(h);
     eyes.push(e, h);
-    // happy eyes ^ ^ : a little arch in the same indigo, shown instead while smiling
-    var arc = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.075, 6, 14, Math.PI), eyeM); arc.position.set(x, EY - 0.12, 0.79); smile.add(arc);
+    var arc = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.016, 6, 14, Math.PI), eyeM); arc.position.set(x, EY - 0.02, D / 2 + 0.01); smile.add(arc); // ^ ^
   });
-  var legs = LEGS.map(function (L, k) {
-    var piv = new THREE.Group(); piv.position.set(((L[0] + L[1]) / 2 - 472.5) / 200, (1405 - 1195) / 200 + 0.16, 0); inner.add(piv);
-    var m = new THREE.Mesh(ext([[L[0], 1195], [L[1], 1195], [L[1], 1405], [L[0], 1405]], 0.8, 0.2), bodyM);
-    m.position.set(-piv.position.x, -piv.position.y, 0); m.castShadow = true; piv.add(m);
-    return piv;
+  var claws = [-1, 1].map(function (sd) {
+    var piv = new THREE.Group(); piv.position.set(sd * W / 2, LEG + H * 0.42, 0); bodyG.add(piv);
+    var c = new THREE.Mesh(cubeR(0.22, 0.2, 0.22, 0.035), bodyM); c.position.x = sd * 0.1; c.castShadow = true; piv.add(c);
+    piv.userData.s = sd; return piv;
   });
-  inner.scale.setScalar(1 / 4.15); // native height ~4.15 -> 1 unit; outer g.scale = height in island units
-  g.userData = { bodyG: bodyG, legs: legs, eyes: eyes, smile: smile };
+  var legs = [];
+  [-0.4, -0.15, 0.15, 0.4].forEach(function (x, i) {
+    [-0.2, 0.2].forEach(function (z, j) {
+      var piv = new THREE.Group(); piv.position.set(x * W, LEG, z); inner.add(piv);
+      var m = new THREE.Mesh(cubeR(LW, LEG + 0.04, LW, 0.028, 6), legM); m.position.y = -(LEG + 0.04) / 2 + 0.02; m.castShadow = true; piv.add(m);
+      piv.userData.ph = (i + j) % 2; legs.push(piv);
+    });
+  });
+  inner.scale.setScalar(1 / N.TOT);
+  g.userData = { bodyG: bodyG, legs: legs, eyes: eyes, smile: smile, claws: claws };
   return g;
 }
 var clawd = makeClawd();
@@ -120,8 +129,8 @@ var CHAR = {
     },
     emo: { hello: ["smile"], wday: ["smile", "star"], wnight: ["blush", "heart"], walk: ["smile", "sweat"], ask_gday: ["star"], ask_knot: ["star"] },
     // emote anchors in "height = 1" units: head top, side of head, blush spot (x, y, z, yaw)
-    face: { top: 0.96, side: 0.55, blush: [0.34, 0.54, 0.188, 0] },
-    faceRoot: function () { return clawd.userData.bodyG; }, faceScale: 4.15, faceOffY: 0, // bodyG: native units, ×4.15 of height
+    face: { top: 1.0, side: 0.6, blush: [0.34, 0.5, 0.345, 0] },
+    faceRoot: function () { return clawd.userData.bodyG; }, faceScale: CLAWD_N.TOT, faceOffY: 0, // bodyG: native units (total height 1.02)
     menu: [["wday", "1、聊聊天气怎么样？"], ["walk", "2、你为什么走路横着走？"]],
     night: { wday: "wnight" }
   }
@@ -145,7 +154,7 @@ function say(key, after, spk) { // menu hides while they talk; `after` runs when
   }
 }
 function speaking(name) { return talkUI.open && talkUI.cur === name && talkUI.voice && !talkUI.voice.paused; }
-function stopChar(name) { if (name === "clawd") { walk.target = null; walk.onArrive = null; } else if (typeof xiaoG !== "undefined") xiaoG.stop(); }
+function stopChar(name) { if (name === "clawd") { walk.target = null; walk.onArrive = null; } else if (CHAR[name] && CHAR[name].stop) CHAR[name].stop(); else if (typeof xiaoG !== "undefined") xiaoG.stop(); }
 function talk(who, partner) {
   stopChar(who); if (partner) stopChar(partner);
   if (!talkUI.bubble) {
@@ -164,6 +173,7 @@ function talk(who, partner) {
     btn.style.cssText = "font:inherit;font-size:13px;text-align:left;padding:8px 12px;border-radius:12px;border:none;background:rgba(255,255,255,0.72);color:#5b6b86;cursor:pointer";
     btn.addEventListener("click", function () {
       var k = (nightTarget && C.night[o[0]]) || o[0], P = talkUI.partner && CHAR[talkUI.partner];
+      if (talkUI.partner && C.lines[k + "_" + talkUI.partner]) k = k + "_" + talkUI.partner; // answer tailored to who asked
       // visiting 家机 asks the question out loud first (camera cuts to it), then the host answers
       if (P && P.lines["ask_" + o[0]]) say("ask_" + o[0], function () { say(k); }, talkUI.partner);
       else say(k);
@@ -339,11 +349,20 @@ function camTick(dt, T) {
 }
 // run after OrbitControls each frame (main loop calls updateHouse after controls.update)
 var wsClock = new THREE.Clock(), _updateHouse = updateHouse;
-updateHouse = function (t, n) { _updateHouse(t, n); var dt = Math.min(wsClock.getDelta(), 0.05); camTick(dt, t); emoTick(dt, t); };
+// zooming in drifts the look-at point down to the 家机 at the door, so a close-up looks at them, not the wall (2026-10-23)
+function lowerOnZoom(dt) {
+  if (camS.on || !IN_WS) return;
+  var d = camera.position.distanceTo(controls.target), f = THREE.MathUtils.clamp((d - 0.5) / (baseDist * 0.85 - 0.5), 0, 1);
+  f = f * f * (3 - 2 * f);
+  var dy = (HC + 0.1 + 0.75 * f - controls.target.y) * Math.min(1, dt * 6);
+  controls.target.y += dy; camera.position.y += dy;
+}
+updateHouse = function (t, n) { _updateHouse(t, n); var dt = Math.min(wsClock.getDelta(), 0.05); camTick(dt, t); lowerOnZoom(dt); emoTick(dt, t); };
 
 // send the steered 家机 somewhere; cb runs on arrival
 function moveChar(name, x, z, cb) {
   if (name === "clawd") { walk.target = new THREE.Vector2(x, z); walk.onArrive = cb || null; }
+  else if (CHAR[name] && CHAR[name].walkTo) CHAR[name].walkTo(x, z, cb);
   else if (typeof xiaoG !== "undefined") xiaoG.walkTo(x, z, cb);
 }
 // steered 家机 walks up to `target` and they chat
@@ -410,17 +429,28 @@ clawd.userData.bodyG.children[0].onBeforeRender = function () {
   var lk = lookTarget("clawd");
   if (lk && !moving) turnToward(clawd, lk, dt); // face whoever it's chatting with
   if (talkUI.open) placeTalk();
-  walk.amt += ((moving ? 1 : 0) - walk.amt) * Math.min(1, dt * 10);
-  walk.phase += dt * 14 * walk.amt;
-  var a = walk.amt, ph = walk.phase;
-  u.legs.forEach(function (L, k) {
-    var s = Math.sin(ph + (k % 2 ? Math.PI : 0));   // pairs 0&2 / 1&3 alternate
-    L.position.y = (1405 - 1195) / 200 + 0.16 + Math.max(0, s) * 0.32 * a;
-    L.rotation.z = s * 0.18 * a * (k < 2 ? 1 : -1);
+  // calm crab gait (same as clawd_lab): two checkerboard groups half a cycle apart; planted feet slide back while
+  // the body glides level, lifted feet reach toward where it's going; legs on the leading side reach further.
+  walk.amt += ((moving ? 1 : 0) - walk.amt) * Math.min(1, dt * 6);
+  var G = CLAWD_GAIT, stride = 2 * 0.26 * Math.sin(G.A) * clawdH / CLAWD_N.TOT;   // island units per cycle
+  walk.phase += dt * walk.amt * Math.min(1 / G.T * 2, walk.speed * (clawdH / 0.2) / stride); // feet keep pace with the body
+  var a = walk.amt, ph = walk.phase, wdir = walk.dir || 1;
+  if (walk.target) { // which local side leads: +x if the path points along the crab's +x
+    var lx = Math.cos(clawd.rotation.y), lz = -Math.sin(clawd.rotation.y), tx = walk.target.x - clawd.position.x, tz = walk.target.y - clawd.position.z;
+    wdir = walk.dir = (lx * tx + lz * tz) >= 0 ? 1 : -1;
+  }
+  u.legs.forEach(function (L) {
+    var q = ((ph + L.userData.ph * 0.5) % 1 + 1) % 1, k, lift = 0;
+    if (q < G.duty) k = 1 - 2 * (q / G.duty);
+    else { var w = (q - G.duty) / (1 - G.duty); k = -1 + 2 * w * w * (3 - 2 * w); lift = Math.sin(w * Math.PI); }
+    var lead = L.position.x * wdir > 0 ? 1.15 : 0.8;
+    L.rotation.z = k * G.A * lead * wdir * a;
+    L.position.y = CLAWD_N.LEG + lift * 0.02 * a;
   });
-  u.bodyG.position.y = Math.abs(Math.sin(ph)) * 0.12 * a + Math.sin(timeU.value * 2.2) * 0.02 * (1 - a);
-  u.bodyG.rotation.z = Math.sin(ph) * 0.05 * a;
-  if (speaking("clawd")) { u.bodyG.position.y += Math.abs(Math.sin(timeU.value * 18)) * 0.07; u.bodyG.scale.y = 1 + Math.sin(timeU.value * 18) * 0.03; } else u.bodyG.scale.y = 1;
+  u.bodyG.position.y = a * 0.006 + (1 - a) * Math.sin(timeU.value * 2.2) * 0.008;
+  u.bodyG.rotation.z = -wdir * 0.03 * a;
+  u.claws.forEach(function (p) { p.rotation.z = p.userData.s * (a * 0.15 + (1 - a) * Math.sin(timeU.value * 2.2) * 0.05); });
+  if (speaking("clawd")) { u.bodyG.position.y += Math.abs(Math.sin(timeU.value * 18)) * 0.017; u.bodyG.scale.y = 1 + Math.sin(timeU.value * 18) * 0.03; } else u.bodyG.scale.y = 1 + (1 - a) * Math.sin(timeU.value * 2.2) * 0.012;
   if (marker.material.opacity > 0) { marker.material.opacity = Math.max(0, marker.material.opacity - dt * 1.2); marker.scale.multiplyScalar(1 + dt * 0.8); }
 };
 
@@ -429,6 +459,6 @@ clawd.userData.bodyG.children[0].onBeforeRender = function () {
 (function () {
   var dn = document.getElementById("dayNight");
   if (dn && dn.style) { dn.style.right = "auto"; dn.style.left = "12px"; dn.style.top = "calc(60px + env(safe-area-inset-top))"; }
-  var hn = document.getElementById("hint"); if (hn) hn.textContent = "点草地走过去 · 点另一个家机去聊天";
+  var hn = document.getElementById("hint"); if (hn) hn.textContent = "点草地走过去 · 点家机聊天 · 双指拖动挪镜头";
 })();
 window.Island.clawd = clawd;
