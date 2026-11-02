@@ -26,7 +26,7 @@ var sea = new THREE.Mesh(seaG, new THREE.ShaderMaterial({
     "uniform float uTime,uWave; uniform vec4 uRip[6]; varying vec3 vW; varying vec3 vN;",
     "float insideV(vec2 p){ return min(5.0-length(p),length(p-vec2(2.4,0.))-3.3); }",
     "float H(vec2 p){ float t=uTime;",
-    " float far=smoothstep(4.,14.,length(p)); float calm=mix(0.25,1.,smoothstep(0.,2.5,0.12-min(5.0-length(p),length(p-vec2(2.4,0.))-2.95))); // swells settle over the shallow beach (2026-10-23)",
+    " float far=smoothstep(4.,14.,length(p)); float calm=mix(0.25,1.,smoothstep(0.,2.5,0.12-min(5.5-length(p),length(p-vec2(2.4,0.))-2.95))); // swells settle over the shallow beach (2026-10-23)",
     " float h=calm*uWave*(0.07*sin(0.45*p.x+0.8*t)+0.06*sin(0.38*p.y-0.65*t+1.3)+0.045*sin(0.3*(p.x+p.y)+1.1*t)+far*(0.06*sin(0.9*p.x-0.6*p.y+1.6*t)+0.035*sin(1.7*p.y+0.8*p.x-2.1*t)));",
     " for(int i=0;i<6;i++){ vec4 r=uRip[i]; float a=t-r.z;",
     "  if(r.w>0.0 && a>0.0 && a<7.0){ float d=distance(p,r.xy);",
