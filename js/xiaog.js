@@ -222,7 +222,7 @@ var xiaoG = (function () {
     var bar = document.createElement("div");
     bar.style.cssText = "position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px;z-index:5;align-items:flex-end";
     var rows = {};
-    [["clawd", "Clawd", "🦀", "#f6c9b4"], ["g", "小G", "☁️", "#dfe9f6"]].forEach(function (o) {
+    [["clawd", "Clawd", "🦀", "#f6c9b4"], ["g", "小G", "☁️", "#dfe9f6"], ["gem", "芥末奈", "✦", "#dce6fb"]].forEach(function (o) {
       var r = document.createElement("button"); r.type = "button"; r.setAttribute("aria-label", "操纵 " + o[1]);
       r.style.cssText = "display:flex;align-items:center;gap:5px;border:none;background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:999px 12px 12px 999px;padding:3px 8px 3px 3px;cursor:pointer;font:inherit;color:#4a5674;transition:transform .2s,background .2s,box-shadow .2s;flex-direction:row-reverse";
       var av = document.createElement("span"); av.textContent = o[2];
